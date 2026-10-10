@@ -1,16 +1,4 @@
-import { query } from "../../../db";
-
-// List recurrentExpenses
-export const get =
-    async (req, res) => {
-
-        const {rows: recurrentExpenses} = await query(
-            `select *
-            from recurrentExpenses
-            join currencys using(id_currency);`
-        );
-
-        res.json({
-            recurrentExpenses
-        });
-    }
+export const get = (req,res) => {
+    res.statusCode=410;
+    res.json({error:'Esta operación antigua no está disponible.',redirect:'/gasto_admin'});
+};

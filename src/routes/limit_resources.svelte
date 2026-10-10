@@ -24,7 +24,8 @@
 				amount
 			}),
 			headers: {'Content-Type': 'application/json'}
-		})
+		});
+        await get_limit_resources();
 	}
 
 	async function get_limit_resources(){

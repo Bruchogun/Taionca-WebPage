@@ -18,6 +18,7 @@ export const get =
 
             FROM attendances
             JOIN users ON users.user_id = attendances.id_user
+            WHERE (${req.user.is_admin || req.user.capabilities.includes('attendance.read_all')} OR attendances.id_user = ${user_id})
             ORDER BY id_attendance DESC;
                 
             `;

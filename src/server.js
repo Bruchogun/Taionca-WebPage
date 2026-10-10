@@ -5,8 +5,10 @@ import responseHelpers from './middlewares/responseHelpers';
 import sessions from './middlewares/sessions';
 import morgan from 'morgan';
 import { json } from 'body-parser';
-import requireLogin from './middlewares/requireLogin';
+import authentication from './middlewares/authentication';
+import { authorizeApi,authorizePage,csrf } from './middlewares/authorization';
 import logs from './middlewares/logs';
+import validateBusinessInput from './middlewares/validateBusinessInput';
 
 
 const { PORT, NODE_ENV } = process.env;
@@ -18,14 +20,18 @@ export default polka() // You can also use Express
 		morgan(dev ? 'dev' : 'combined'),
 		sirv('static', { dev }),
 		sessions(dev),
+        responseHelpers,
+        authentication,
 	)
 	.use('/api',
-		responseHelpers,
-		requireLogin,
 		json(),
+        authorizeApi,
+        csrf,
 		logs,
+		validateBusinessInput,
 	)
 	.use(
+        authorizePage,
 		sapper.middleware({
 			session: (req) => ({user: req.session.user})
 		})

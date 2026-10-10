@@ -1,11 +1,13 @@
 <script>
 	import 'carbon-components-svelte/css/white.css';
     import { DataTable, Grid, Row, Column } from "carbon-components-svelte";
-	import Closed_odts from './Closed_odts.svelte';
-	import { apiFetch, checkPermissions, format_number } from '../functions';
-    import { onMount, tick } from 'svelte';
+	import Odt_settlement_history from './Odt_settlement_history.svelte';
+    import Odt_payment_history from './Odt_payment_history.svelte';
+    import Closed_odts from './Closed_odts.svelte';
+	import { apiFetch,  format_number } from '../functions';
+    import { tick } from 'svelte';
 	import { session } from '../stores';
-	import { PRESIDENT } from '../constants/PERMISSIONS';
+	import { allows } from '../security/access';
 
 	export let start_date;
 	export let end_date;
@@ -14,31 +16,21 @@
 	let admin_percent;
 	let odt;
 	let balance_movements = [];
-	let odt_closure_resume = [];
+	let odt_closure_resume = null;
+    let payments = null;
+    let currency_settlement = null;
 	let isDisabled = true;
 	let admin_profit;
 	let taionca_profit;
 	let general_expenses;
 	let inv_expenses;
 
-	onMount(async ()=>{
-		const result = await apiFetch("/api/user");
-		$session = result.session;
-		await tick();
-		check_permissions();
-	})
-
-	function check_permissions(){
-		let user_permissions = ($session && $session.permissions) || [];
-		if (checkPermissions([PRESIDENT[1]], user_permissions)){
-			isDisabled = false;
-		}
-	}
+	$: isDisabled = !allows($session, ['odts.limits']);
 	
 	async function get_odt_movements(){
-		admin_percent = Number(odt.admin_percent);
+		odt_closure_resume = null;
 		({balance_movements} = await apiFetch(`/api/public/odt_movements/${odt.id_odt}`));
-		({odt_closure_resume} = await apiFetch(`/api/public/odt_closure_resume/${odt.id_odt}`));
+		({odt_closure_resume, payments, currency_settlement} = await apiFetch(`/api/public/odt_closure_resume/${odt.id_odt}`));
 		await tick();
 		set_data_balance_movements();
 		set_data_currency_movements();
@@ -82,6 +74,7 @@
 	}
 	let rows_currencies = [];
 	function set_data_currency_movements(){
+		rows_currencies = [];
 		if (rows_balance_movements.length>0){
 			const currencies_auxiliar = {};
 			rows_balance_movements.forEach(movement => {
@@ -100,6 +93,8 @@
 
 	let rows_commissions = [];
 	function set_data_closure_resume(){
+		rows_commissions = [];
+		admin_percent = Number(odt_closure_resume.admin_expense_percent);
 		admin_profit = format_number(odt_closure_resume.admin_profit, "currency")
 		taionca_profit = format_number(odt_closure_resume.taionca_profit, "currency")
 		general_expenses = format_number(odt_closure_resume.general_expenses, "currency")
@@ -108,10 +103,10 @@
 		if (odt_closure_resume.ceo_commissions.length > 0 || odt_closure_resume.admin_commissions.length > 0 || odt_closure_resume.operative_commissions.length > 0 || odt_closure_resume.supervisor_commissions.length > 0){
 
 			let id = 0;
-			let all_commissions = odt_closure_resume.ceo_commissions;
-			odt_closure_resume.admin_commissions.forEach(user => all_commissions.push(user));
-			odt_closure_resume.operative_commissions.forEach(user => all_commissions.push(user));
-			odt_closure_resume.supervisor_commissions.forEach(user => all_commissions.push(user));
+			let all_commissions = [
+                ...odt_closure_resume.ceo_commissions, ...odt_closure_resume.admin_commissions,
+                ...odt_closure_resume.operative_commissions, ...odt_closure_resume.supervisor_commissions
+            ];
 
 			rows_commissions = all_commissions.map((user) => ({
 				user: `${user.user_name} ${user.user_lastname}`,
@@ -136,6 +131,8 @@
 {#if odt && odt_closure_resume} 
 
 	<Grid narrow>
+        <Row><Column><h5>Cuenta de destino: {odt_closure_resume.account_name}</h5></Column></Row>
+        <Row><Column><h5>{currency_settlement && currency_settlement.settlement_mode!=='legacy'?'Equivalente total en la moneda original':'Monto recibido'}: {odt.symbol}{format_number(odt_closure_resume.paid_amount, "currency")}</h5></Column></Row>
 		<Row>
 			<Column padding style="outline: 1px solid var(--cds-interactive-04)">
 				<h5>Id de la ODT: {odt.id_odt}</h5>
@@ -174,6 +171,7 @@
 				<h5>{odt.description}</h5>
 			</Column>
 		</Row>		
+        {#if !currency_settlement || currency_settlement.settlement_mode==='legacy'}
 		<Row>
 			<Column style="outline: 1px solid var(--cds-interactive-04)">
 				<h5>Dinero para Taionca: {odt.symbol}{taionca_profit}</h5>
@@ -194,7 +192,10 @@
 				<h5>Dinero utilizado para gastos de inventario: {odt.symbol}{inv_expenses}</h5>
 			</Column>
 		</Row>
+        {/if}
 	</Grid>
+    <Odt_payment_history summary={payments} />
+    <Odt_settlement_history details={currency_settlement} />
 
 	{#if rows_commissions.length!=0}
 		<div class="margin">

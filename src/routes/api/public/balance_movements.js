@@ -23,7 +23,7 @@ export const get =
             join accounts using(id_account)
             join currencys using(id_currency)
 
-            ORDER BY created_at;
+            ORDER BY balance_movements.created_at, id_balance_movement;
             `
         );
 

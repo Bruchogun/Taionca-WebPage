@@ -2,6 +2,7 @@
 	import SelectSearch from '../components/Select.svelte';
 
 	export let odt;
+    export let initial_id = null;
 	export let is_filtered = false;
 	export let start_date;
 	export let end_date;
@@ -15,6 +16,10 @@
     let odts = [];
 	onMount(async ()=>{
 		 ({odts} = await apiFetch('/api/public/odts'));
+         if (initial_id) {
+             const initial = odts.find(item => item.id_odt === Number(initial_id));
+             if (initial) odt = { ...initial, value: initial.id_odt, label: `${initial.id_odt} | ${initial.user_name} | ${initial.name} | ${initial.symbol}.${Number(initial.amount).toFixed(2)}` };
+         }
 	})
 	
 	let odtsToList = [];

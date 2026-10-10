@@ -1,4 +1,7 @@
 <script>
+	import { onMount } from 'svelte';
+	import { session } from '../stores';
+	import { allows } from '../security/access';
 	import 'carbon-components-svelte/css/white.css';
 	import {DataTable} from "carbon-components-svelte";
 	import { apiFetch } from '../functions';
@@ -11,6 +14,7 @@
 	let loans_register;
 
 	async function get_loans(){
+		if(!user){rows=[];rows_register=[];return;}
 		({loans_register} = await apiFetch('/api/public/loans_registers'));
 		({loans} = await apiFetch('/api/public/loans'));
 		let loans_filtered = loans.filter(({id_user}) => id_user === user.value);
@@ -20,7 +24,7 @@
 			amount: `${Number(loan.amount).toFixed(2)} ${loan.symbol}`
 		}));
 
-		console.log(loans_register)
+
 		let loans_register_filtered = loans_register.filter(({id_user}) => id_user === user.value); 
 		rows_register = loans_register_filtered.map(loan_register => ({
 			id: loan_register.id_loans_register,
@@ -30,6 +34,9 @@
 			date: new Date(loan_register.created_at).toLocaleDateString()
 		}));
 	}
+
+	$: canReadAll = allows($session,['finance.read','finance.loans']);
+	onMount(async()=>{if(!canReadAll){user={value:$session.user_id};await get_loans();}});
 
     //HEADERS
 	let headers = [
@@ -48,7 +55,7 @@
 
 <h5>Gestión de deudas</h5>
 
-<Users bind:user={user} on:select={get_loans}/>
+{#if canReadAll}<Users bind:user={user} on:select={get_loans}/>{:else}<p>Mis deudas</p>{/if}
 
 {#if rows}<DataTable size="short" title="Deudas" sortable {headers} {rows} />{/if}
 

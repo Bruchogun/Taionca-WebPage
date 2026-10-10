@@ -12,9 +12,9 @@
 	let entity_income;
 	let entity_expense
 
-	function create_transfer(){
+	async function create_transfer(){
 
-		apiFetch("/api/public/transfer_entitys",{
+		await apiFetch("/api/public/transfer_entitys",{
 			method: 'POST',
 			body: JSON.stringify({
 				description,

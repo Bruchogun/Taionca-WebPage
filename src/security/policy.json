@@ -1,0 +1,1033 @@
+{
+  "capabilities": [
+    {
+      "key": "users.create",
+      "group": "Usuarios",
+      "label": "Crear usuarios"
+    },
+    {
+      "key": "users.read",
+      "group": "Usuarios",
+      "label": "Consultar usuarios"
+    },
+    {
+      "key": "clients.manage",
+      "group": "Catálogos",
+      "label": "Gestionar clientes"
+    },
+    {
+      "key": "responsibilities.manage",
+      "group": "Personal",
+      "label": "Crear y asignar responsabilidades"
+    },
+    {
+      "key": "responsibilities.approve",
+      "group": "Personal",
+      "label": "Aprobar responsabilidades"
+    },
+    {
+      "key": "attendance.read_all",
+      "group": "Personal",
+      "label": "Consultar asistencia de todo el personal"
+    },
+    {
+      "key": "payroll.assign",
+      "group": "Personal",
+      "label": "Asignar horas a ODTs"
+    },
+    {
+      "key": "payroll.pay",
+      "group": "Personal",
+      "label": "Consultar y pagar nómina"
+    },
+    {
+      "key": "odts.create",
+      "group": "ODTs",
+      "label": "Crear ODTs"
+    },
+    {
+      "key": "odts.read",
+      "group": "ODTs",
+      "label": "Consultar ODTs y sus movimientos"
+    },
+    {
+      "key": "odts.payments",
+      "group": "ODTs",
+      "label": "Registrar abonos"
+    },
+    {
+      "key": "odts.close",
+      "group": "ODTs",
+      "label": "Cerrar ODTs y distribuir utilidades"
+    },
+    {
+      "key": "odts.limits",
+      "group": "ODTs",
+      "label": "Cambiar límites y porcentaje administrativo"
+    },
+    {
+      "key": "quotations.create",
+      "group": "ODTs",
+      "label": "Crear cotizaciones"
+    },
+    {
+      "key": "quotations.read",
+      "group": "ODTs",
+      "label": "Consultar cotizaciones"
+    },
+    {
+      "key": "expenses.general",
+      "group": "Gastos",
+      "label": "Registrar gastos generales"
+    },
+    {
+      "key": "expenses.inventory",
+      "group": "Gastos",
+      "label": "Registrar gastos de inventario"
+    },
+    {
+      "key": "expenses.admin",
+      "group": "Gastos",
+      "label": "Registrar gastos administrativos"
+    },
+    {
+      "key": "inventory.read",
+      "group": "Inventario",
+      "label": "Consultar inventario"
+    },
+    {
+      "key": "inventory.create",
+      "group": "Inventario",
+      "label": "Crear artículos, almacenes y proveedores"
+    },
+    {
+      "key": "inventory.purchase",
+      "group": "Inventario",
+      "label": "Reponer inventario"
+    },
+    {
+      "key": "finance.read",
+      "group": "Finanzas",
+      "label": "Consultar saldos y movimientos"
+    },
+    {
+      "key": "finance.accounts",
+      "group": "Finanzas",
+      "label": "Crear cuentas"
+    },
+    {
+      "key": "finance.income",
+      "group": "Finanzas",
+      "label": "Registrar ingresos"
+    },
+    {
+      "key": "finance.investment",
+      "group": "Finanzas",
+      "label": "Registrar inversiones"
+    },
+    {
+      "key": "finance.exchange",
+      "group": "Finanzas",
+      "label": "Cambiar moneda"
+    },
+    {
+      "key": "finance.transfer",
+      "group": "Finanzas",
+      "label": "Transferir dinero"
+    },
+    {
+      "key": "finance.loans",
+      "group": "Finanzas",
+      "label": "Otorgar y cobrar préstamos"
+    }
+  ],
+  "legacy": {
+    "users_create": [
+      "users.create"
+    ],
+    "users_read": [
+      "users.read"
+    ],
+    "odt_create": [
+      "odts.create"
+    ],
+    "odt_read": [
+      "odts.read",
+      "quotations.read"
+    ],
+    "odt_update": [
+      "odts.payments",
+      "odts.close",
+      "payroll.assign",
+      "finance.transfer"
+    ],
+    "admin_expenses_create": [
+      "expenses.admin",
+      "clients.manage"
+    ],
+    "general_expenses_create": [
+      "expenses.general"
+    ],
+    "inv_odt_expenses_create": [
+      "expenses.inventory"
+    ],
+    "inv_purchases_create": [
+      "inventory.purchase"
+    ],
+    "stocks_read": [
+      "inventory.read"
+    ],
+    "stocks_create": [
+      "inventory.create"
+    ],
+    "storages_create": [
+      "inventory.create"
+    ],
+    "exchange_currency_create": [
+      "finance.exchange",
+      "expenses.admin"
+    ],
+    "president": [
+      "responsibilities.manage",
+      "responsibilities.approve",
+      "attendance.read_all",
+      "payroll.pay",
+      "odts.limits",
+      "quotations.create",
+      "finance.read",
+      "finance.accounts",
+      "finance.income",
+      "finance.investment",
+      "finance.loans"
+    ],
+    "admin_expenses_read": [
+      "finance.read"
+    ],
+    "general_expenses_read": [
+      "odts.read"
+    ],
+    "inv_odt_expenses_read": [
+      "odts.read"
+    ],
+    "inv_purchases_read": [
+      "inventory.read"
+    ],
+    "storages_read": [
+      "inventory.read"
+    ],
+    "exchange_currency_read": [
+      "finance.read"
+    ]
+  },
+  "pages": {
+    "/login": "public",
+    "/about": "public",
+    "/sin_acceso": "authenticated",
+    "/administracion_permisos": "admin",
+    "/": [
+      "finance.read"
+    ],
+    "/signup": [
+      "users.create"
+    ],
+    "/change_password": "authenticated",
+    "/ingreso_clients": [
+      "clients.manage"
+    ],
+    "/asignar_responsabilities": [
+      "responsibilities.manage"
+    ],
+    "/ingreso_responsabilities": [
+      "responsibilities.manage"
+    ],
+    "/approve_responsabilities": [
+      "responsibilities.approve"
+    ],
+    "/update_responsibility_token": [
+      "responsibilities.manage"
+    ],
+    "/responsabilities": "authenticated",
+    "/attendance": "authenticated",
+    "/asign_hours_odt": [
+      "payroll.assign"
+    ],
+    "/loans": "authenticated",
+    "/give_loans": [
+      "finance.loans"
+    ],
+    "/pay_loans": [
+      "finance.loans"
+    ],
+    "/limit_resources": [
+      "odts.limits"
+    ],
+    "/odt_quotation": [
+      "quotations.create"
+    ],
+    "/nueva_odt": [
+      "odts.create"
+    ],
+    "/abonos_odt": [
+      "odts.payments"
+    ],
+    "/cerrar_odt": [
+      "odts.close"
+    ],
+    "/odts_review": [
+      "odts.read"
+    ],
+    "/quotations_review": [
+      "quotations.read"
+    ],
+    "/gastos_generales": [
+      "expenses.general"
+    ],
+    "/gasto_admin": [
+      "expenses.admin"
+    ],
+    "/gasto_inventario": [
+      "expenses.inventory"
+    ],
+    "/investments": [
+      "finance.investment"
+    ],
+    "/money_incomes": [
+      "finance.income"
+    ],
+    "/cambio_moneda": [
+      "finance.exchange"
+    ],
+    "/money_transfer": [
+      "finance.transfer"
+    ],
+    "/balances": [
+      "finance.read"
+    ],
+    "/balance_registers": [
+      "finance.read"
+    ],
+    "/create_account": [
+      "finance.accounts"
+    ],
+    "/movements_review": [
+      "finance.read"
+    ],
+    "/payroll": [
+      "payroll.pay"
+    ],
+    "/update_payroll_token": [
+      "payroll.pay"
+    ],
+    "/inventory_review": [
+      "inventory.read"
+    ],
+    "/control_inv": [
+      "inventory.read"
+    ],
+    "/reposicion_inv": [
+      "inventory.purchase"
+    ],
+    "/ingreso_spendable_inv": [
+      "inventory.create"
+    ],
+    "/ingreso_no_spendable_inv": [
+      "inventory.create"
+    ],
+    "/ingreso_storages": [
+      "inventory.create"
+    ],
+    "/ingreso_suppliers": [
+      "inventory.create"
+    ],
+    "/solicitud_prestamo": "authenticated",
+    "/solicitud_cambio_moneda": "authenticated"
+  },
+  "api": [
+    {
+      "method": "POST",
+      "path": "/api/public/login",
+      "access": "public"
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/attendance",
+      "access": "authenticated"
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/new_awaiting_approval_responsibility",
+      "access": "authenticated"
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/new_client",
+      "access": [
+        "clients.manage"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/new_supplier",
+      "access": [
+        "inventory.create"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/new_storage",
+      "access": [
+        "inventory.create"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/new_spendable_item_product_brand",
+      "access": [
+        "inventory.create"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/new_no_spendable_item_product_brand",
+      "access": [
+        "inventory.create"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/spendable_inv_odt_incomes",
+      "access": [
+        "inventory.purchase"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/no_spendable_inv_odt_incomes",
+      "access": [
+        "inventory.purchase"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/spendable_inv_odt_expenses",
+      "access": [
+        "expenses.inventory"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/no_spendable_inv_odt_expenses",
+      "access": [
+        "expenses.inventory"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/new_recurrent_responsibility",
+      "access": [
+        "responsibilities.manage"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/assign_responsibility",
+      "access": [
+        "responsibilities.manage"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/update_responsibility",
+      "access": [
+        "responsibilities.manage"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/new_approved_responsibility",
+      "access": [
+        "responsibilities.approve"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/rejected_responsibility",
+      "access": [
+        "responsibilities.approve"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/new_payroll_hours",
+      "access": [
+        "payroll.assign"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/new_payroll_expense",
+      "access": [
+        "payroll.pay"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/payroll_preview",
+      "access": [
+        "payroll.pay"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/nueva_odt",
+      "access": [
+        "odts.create"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/closure_odt",
+      "access": [
+        "odts.close"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/odt_payments",
+      "access": [
+        "odts.payments"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/odt_settlement",
+      "access": [
+        "odts.close"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/create_quotation",
+      "access": [
+        "quotations.create"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/update_limit_resources",
+      "access": [
+        "odts.limits"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/update_admin_percent",
+      "access": [
+        "odts.limits"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/create_account",
+      "access": [
+        "finance.accounts"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/money_incomes",
+      "access": [
+        "finance.income"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/investments",
+      "access": [
+        "finance.investment"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/exchange_currency",
+      "access": [
+        "finance.exchange"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/transfer_entitys",
+      "access": [
+        "finance.transfer"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/give_loan",
+      "access": [
+        "finance.loans"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/pay_loan",
+      "access": [
+        "finance.loans"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/general_expenses",
+      "access": [
+        "expenses.general"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/admin_expenses",
+      "access": [
+        "expenses.admin"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/incomes",
+      "access": [
+        "finance.income"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/accounts",
+      "access": "authenticated"
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/currencys",
+      "access": "authenticated"
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/entitys",
+      "access": "authenticated"
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/measures",
+      "access": "authenticated"
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/get_attendance",
+      "access": "authenticated"
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/pending_responsibilitys",
+      "access": "authenticated"
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/not_approving_pending_responsibilitys",
+      "access": "authenticated"
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/loans",
+      "access": "authenticated"
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/loans_registers",
+      "access": "authenticated"
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/all_items",
+      "access": [
+        "inventory.read",
+        "inventory.create",
+        "inventory.purchase",
+        "expenses.inventory",
+        "quotations.create"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/all_items_table",
+      "access": [
+        "inventory.read",
+        "inventory.create",
+        "inventory.purchase",
+        "expenses.inventory",
+        "quotations.create"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/brands",
+      "access": [
+        "inventory.read",
+        "inventory.create",
+        "inventory.purchase",
+        "expenses.inventory",
+        "quotations.create"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/no_spendable_products",
+      "access": [
+        "inventory.read",
+        "inventory.create",
+        "inventory.purchase",
+        "expenses.inventory",
+        "quotations.create"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/spendable_products",
+      "access": [
+        "inventory.read",
+        "inventory.create",
+        "inventory.purchase",
+        "expenses.inventory",
+        "quotations.create"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/storages",
+      "access": [
+        "inventory.read",
+        "inventory.create",
+        "inventory.purchase",
+        "expenses.inventory",
+        "quotations.create"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/suppliers",
+      "access": [
+        "inventory.read",
+        "inventory.create",
+        "inventory.purchase",
+        "expenses.inventory",
+        "quotations.create"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/responsibilitys",
+      "access": [
+        "responsibilities.manage"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/active_responsibilitys",
+      "access": [
+        "responsibilities.manage"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/last_pending_responsibilitys",
+      "access": [
+        "responsibilities.manage"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/time_frequencys",
+      "access": [
+        "responsibilities.manage"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/all_awaiting_approval_responsibilitys",
+      "access": [
+        "responsibilities.approve"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/clients",
+      "access": [
+        "clients.manage",
+        "odts.create",
+        "quotations.create",
+        "odts.read",
+        "quotations.read"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/closed_odts",
+      "access": [
+        "odts.read",
+        "finance.read"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/odts",
+      "access": [
+        "odts.read",
+        "odts.close",
+        "odts.payments",
+        "expenses.general",
+        "expenses.inventory",
+        "odts.limits",
+        "payroll.assign",
+        "finance.read"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/get_limit_resources",
+      "access": [
+        "odts.limits",
+        "expenses.general"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/payroll_not_assign_hours",
+      "access": [
+        "payroll.assign"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/payroll_odt_hours",
+      "access": [
+        "payroll.pay",
+        "odts.close"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/payroll_variables",
+      "access": [
+        "payroll.pay"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/pay_payroll",
+      "access": [
+        "payroll.pay"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/quotations",
+      "access": [
+        "quotations.read",
+        "quotations.create",
+        "odts.create"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/balances",
+      "access": [
+        "finance.read"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/balance_movements",
+      "access": [
+        "finance.read"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/balance_registers",
+      "access": [
+        "finance.read"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/recurrentExpenses",
+      "access": [
+        "expenses.admin"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/odt_closure_resume/:id",
+      "access": [
+        "odts.close",
+        "odts.read",
+        "finance.read"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/odt_movements/:id",
+      "access": [
+        "odts.read",
+        "finance.read"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/odt_payments/:id",
+      "access": [
+        "odts.payments",
+        "odts.close",
+        "odts.read",
+        "finance.read"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/odt_settlement/:id",
+      "access": [
+        "odts.close",
+        "odts.read"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/quotations_review/:id",
+      "access": [
+        "quotations.read",
+        "quotations.create"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/balance_registers_charts/:start/:end",
+      "access": [
+        "finance.read"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/user",
+      "access": "authenticated"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/user",
+      "access": "authenticated"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/user",
+      "access": "authenticated"
+    },
+    {
+      "method": "GET",
+      "path": "/api/user/permissions",
+      "access": "authenticated"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/access",
+      "access": "authenticated"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users",
+      "access": [
+        "users.read",
+        "odts.close",
+        "responsibilities.manage",
+        "finance.loans",
+        "payroll.assign",
+        "finance.read"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/users",
+      "access": [
+        "users.create"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/roles",
+      "access": "admin"
+    },
+    {
+      "method": "POST",
+      "path": "/api/roles",
+      "access": "admin"
+    },
+    {
+      "method": "GET",
+      "path": "/api/role/:id",
+      "access": "admin"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/role/:id",
+      "access": "admin"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/role/:id",
+      "access": "admin"
+    },
+    {
+      "method": "GET",
+      "path": "/api/user/:id",
+      "access": "admin"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/user/:id",
+      "access": "admin"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/security",
+      "access": "admin"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/permissions",
+      "access": "admin"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/admin/permissions/:id",
+      "access": "admin"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admin/permissions/:id",
+      "access": "admin"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/roles",
+      "access": "admin"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/admin/roles/:id",
+      "access": "admin"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admin/roles/:id",
+      "access": "admin"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/users/:id/roles",
+      "access": "admin"
+    }
+  ]
+}

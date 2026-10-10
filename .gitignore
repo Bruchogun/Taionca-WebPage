@@ -8,3 +8,5 @@ tests/.auth
 test-results
 .env*
 !.env.template
+
+/playwright-report/

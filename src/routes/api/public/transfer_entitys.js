@@ -1,9 +1,10 @@
+import { safeOdtExpense } from '../../../lib/odt-expense-errors';
 import { compose } from "compose-middleware";
 import { USERS_READ } from "../../../constants/PERMISSIONS";
 import { sql } from "../../../db";
 import checkPermissionsMW from "../../../middlewares/checkPermissionsMW";
 
-export const post =
+export const post = safeOdtExpense(
     async (req, res) => {
         const {description, amount, income, expense} = req.body;
         if(expense.id_account === income.id_account && expense.id_entity === income.id_entity){
@@ -21,7 +22,7 @@ export const post =
                 )
                 SELECT alter_balance( --Maldita sea, puto alter_balance siempre de ultimo en los WITHS!!!!!! 
                     id_balance,
-                    CASE WHEN id_entity=${expense.id_entity} THEN ${-(amount)}::numeric ELSE ${amount}::numeric END,
+                    CASE WHEN id_entity=${expense.id_entity} THEN ${'-'+amount}::numeric ELSE ${amount}::numeric END,
                     id_transfer_entity,
                     'transfer_entities' 
                 ) FROM balances, new_transfer_entitys
@@ -45,7 +46,7 @@ export const post =
                     )
                     SELECT alter_balance( --Maldita sea, puto alter_balance siempre de ultimo en los WITHS!!!!!! 
                         id_balance,
-                        CASE WHEN id_account=${expense.id_account} THEN ${-(amount)}::numeric ELSE ${amount}::numeric END,
+                        CASE WHEN id_account=${expense.id_account} THEN ${'-'+amount}::numeric ELSE ${amount}::numeric END,
                         id_transfer_entity,
                         'transfer_entities' 
                     ) FROM balances, new_transfer_entitys
@@ -59,4 +60,4 @@ export const post =
                 data
             });
         }
-    }
+    });

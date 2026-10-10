@@ -9,7 +9,8 @@ export const get =
             from balance_registers
             join balances using(id_balance)
             join accounts using(id_account)
-            join currencys using(id_currency);
+            join currencys using(id_currency)
+            ORDER BY balance_registers.created_at, id_balance_register;
             `
         );
 

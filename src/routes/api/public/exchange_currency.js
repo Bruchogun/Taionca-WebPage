@@ -1,9 +1,10 @@
+import { safeOdtExpense } from '../../../lib/odt-expense-errors';
 import { compose } from "compose-middleware";
 import { USERS_READ } from "../../../constants/PERMISSIONS";
 import { query } from "../../../db";
 import checkPermissionsMW from "../../../middlewares/checkPermissionsMW";
 
-export const post =
+export const post = safeOdtExpense(
     async (req, res) => {
         const {description, income, expense, id_entity} = req.body;
         if(expense.id_account === income.id_account){
@@ -41,4 +42,4 @@ export const post =
             success:"Cambio de moneda realizado",
             data
         });
-    }
+    });

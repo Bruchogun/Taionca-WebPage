@@ -24,7 +24,7 @@ export const get =
             join accounts using(id_account)
             join currencys using(id_currency)
 
-            WHERE id_entity = 1 AND get_odt_movement(id_movement_category, type_movement_category) = ${id_odt}
+            WHERE id_entity = 1 AND type_movement_category IN ('general_expenses','spendable_inv_odt_expenses','no_spendable_inv_odt_expenses') AND get_odt_movement(id_movement_category, type_movement_category) = ${id_odt}
 
             ORDER BY created_at;
             `

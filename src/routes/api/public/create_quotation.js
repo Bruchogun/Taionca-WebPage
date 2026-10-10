@@ -2,6 +2,7 @@ import { compose } from "compose-middleware";
 import { USERS_READ } from "../../../constants/PERMISSIONS";
 import { sql } from "../../../db";
 import { getRate } from "../../../functions";
+import { quotationTotals } from "../../../lib/currency";
 import checkPermissionsMW from "../../../middlewares/checkPermissionsMW";
 
 // Rate based in quotation's currency
@@ -21,29 +22,14 @@ export const post =
 
     //
         async function create_quotation(){
-            let total_general_expenses = 0; //Same currency of quotation
-            const expensePromise = Promise.all(general_expenses.map(async general_expense => {
-                const rate = await getRatesCached(currency.code, general_expense.currency.code);
-                const amount = Number(general_expense.amount) * rate
-                total_general_expenses += amount;
-                general_expense.rate = rate;
+            await Promise.all(general_expenses.map(async expense => {
+                expense.rate = await getRatesCached(currency.code, expense.currency.code);
             }));
-
-            let total_inv_expenses = 0;
-            for (let i = 0; i < inv_expenses.length; i++) {
-                total_inv_expenses += Number(inv_expenses[i].amount) * Number(inv_expenses[i].quantity);
-                const rate_usd = await getRatesCached(currency.code, 'usd');
-                total_inv_expenses = total_inv_expenses * rate_usd;
-                inv_expenses[i].rate = rate_usd;
+            if (inv_expenses.length) {
+                const rate = await getRatesCached(currency.code, 'USD');
+                inv_expenses.forEach(expense => { expense.rate = rate; });
             }
-
-            await expensePromise;
-
-            let contract_amount = (total_general_expenses + total_inv_expenses) / (1-admin_percent);
-        
-            let quotation_data = [total_general_expenses, total_inv_expenses, contract_amount, admin_percent];
-
-            return quotation_data;
+            return quotationTotals(general_expenses, inv_expenses, admin_percent);
         }
 
         // inv_expense splitted into spendable_expenses and no_spendable_expenses

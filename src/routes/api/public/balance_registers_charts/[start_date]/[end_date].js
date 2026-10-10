@@ -30,7 +30,7 @@ export const get =
             join accounts using (id_account)
             join currencys using (id_currency)
             join entitys using (id_entity)
-            where balance_registers.created_at >= (select to_timestamp(${start_date})::date) AND balance_registers.created_at <= (select to_timestamp(${end_date})::date)
+            where balance_registers.created_at >= (select to_timestamp(${start_date})::date) AND balance_registers.created_at < (select to_timestamp(${end_date})::date + interval '1 day')
             ORDER BY balance_registers.created_at ASC;
             `
         ;

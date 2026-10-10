@@ -28,6 +28,7 @@
 			id_client = quotation.id_client;
 			id_quotation = quotation.id_quotation;
 			id_currency = quotation.id_currency;
+            admin_percent = quotation.admin_percent;
 		}else if (client && selectedIndex === 1){
 			id_client = client.value;
 			id_quotation = null;

@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto';
 import session from 'express-session';
 import pgSession from 'connect-pg-simple';
 import { session_options } from '../config';
@@ -7,7 +8,7 @@ session_options.store = new PgStore({pool});
 
 export default dev => {
     if (dev) {
-        session_options.secret = "TRYLr8U0iPhkmzHO+HT+xHkdKovUMBxw0Q4LZp9F"
+        session_options.secret = process.env.SECRET_SESSION || randomBytes(32).toString('hex')
     } else {
         session_options.cookie.secure = true
         session_options.cookie.domain = "taionca.com"

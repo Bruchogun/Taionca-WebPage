@@ -1,191 +1,77 @@
-<script>
-	import Logout32 from "carbon-icons-svelte/lib/Logout32";
-	import { onMount } from 'svelte';
-	import { session, notifications } from '../stores';
-	import { apiFetch, checkPermissions } from '../functions';
-	import { goto } from '@sapper/app'
-	import {ADMIN_EXPENSES_CREATE,
-			EXCHANGE_CURRENCY_CREATE,
-			GENERAL_EXPENSES_CREATE,
-			INV_ODT_EXPENSES_CREATE,
-			INV_PURCHASES_CREATE,
-			ODT_CREATE,
-			ODT_UPDATE,
-			STOCKS_CREATE,
-			STOCKS_READ,
-			STORAGES_CREATE,
-			USERS_CREATE,
-			PRESIDENT,
-			ODT_READ,
-			USERS_READ,
-			ODT_DELETE
-		} from '../constants/PERMISSIONS';
-
-	import {
-			Header,
-			HeaderUtilities,
-			HeaderAction,
-			HeaderGlobalAction,
-			HeaderPanelLinks,
-			HeaderPanelDivider,
-			HeaderPanelLink,
-			SideNav,
-			SideNavItems,
-			SideNavMenu,
-			SideNavMenuItem,
-			SideNavLink,
-			SkipToContent,
-			Content,
-			InlineNotification,
-			ToastNotification,
-		} from "carbon-components-svelte";
-	import Loader from "../components/Loader.svelte";
-
-	function logout(){
-		fetch("/api/user", {
-			method: "DELETE"
-		});
-		$session = null;
-		goto("/login");
-	}
-
-	onMount(async ()=>{
-		const result = await apiFetch("/api/user");
-		$session = result.session;
-	})
-
-	$: user_permissions = ($session && $session.permissions) || [];
-
-	let isSideNavOpen = false;
-	let isOpen = false;
-
+<script context="module">
+    export async function preload(page,session) {
+        if(page.path==='/login'||page.path==='/about'||page.path.startsWith('/blog')) return {authUser:session.user||null};
+        const response=await this.fetch('/api/auth/access?path='+encodeURIComponent(page.path));
+        if(response.status===401) return this.redirect(302,'/login');
+        if(response.status===403) return this.redirect(302,'/sin_acceso');
+        if(!response.ok) return this.error(response.status,'No se pudo verificar el acceso.');
+        return {authUser:(await response.json()).session};
+    }
 </script>
-
-<style>
-	.notifications{
-		position: fixed;
-		display: flex;
-		flex-direction: column-reverse;
-		bottom: 0;
-		right: 0;
-		
-	}
-</style>
-  
-  <Header href="{checkPermissions([PRESIDENT[1]], user_permissions)?'/':'attendance'}" company="Taionca" platformName="Página Web" bind:isSideNavOpen >
-
-	<div slot="skip-to-content">
-	  <SkipToContent/>
-	</div>
-
-	<HeaderUtilities>
-		
-		{#if $session}
-			<HeaderAction bind:isOpen >
-	
-			<HeaderPanelLinks >
-	
-				<HeaderPanelDivider>Preferencias de Usuario</HeaderPanelDivider>
-				<HeaderPanelLink href="change_password">Cambiar contraseña</HeaderPanelLink>
-	
-			</HeaderPanelLinks>
-	
-			</HeaderAction>
-			
-			<HeaderGlobalAction on:click={logout} aria-label="Settings" iconDescription="Cerrar sesión" icon={Logout32}/>
-		{/if}
-
-		</HeaderUtilities>
-
-  </Header>
-
-  
-  <SideNav bind:isOpen={isSideNavOpen}>
-
-	<SideNavItems>
-		{#if !$session}
-			<SideNavLink href="login" text="Inicio de sesión" />
-		{:else}
-
-			<SideNavMenu text="Gestión de usuarios">
-				{#if checkPermissions([USERS_CREATE[1]], user_permissions)}<SideNavMenuItem href="signup" text="Crear usuario" />{/if}
-				{#if checkPermissions([ADMIN_EXPENSES_CREATE[1]], user_permissions)}<SideNavMenuItem href="ingreso_clients" text="Crear cliente" />{/if}
-				{#if checkPermissions([PRESIDENT[1]], user_permissions)}<SideNavMenuItem href="asignar_responsabilities" text="Asignar responsabilidad" />{/if}
-				{#if checkPermissions([PRESIDENT[1]], user_permissions)}<SideNavMenuItem href="ingreso_responsabilities" text="Crear responsabilidad" />{/if}
-				{#if checkPermissions([PRESIDENT[1]], user_permissions)}<SideNavMenuItem href="approve_responsabilities" text="Aprobar responsabilidad" />{/if}
-				<SideNavMenuItem href="responsabilities" text="Responsabilidades" />
-				<SideNavMenuItem href="attendance" text="Asistencia" />
-				{#if checkPermissions([ODT_UPDATE[1]], user_permissions)}<SideNavMenuItem href="asign_hours_odt" text="Horas por ODT" />{/if}
-				<SideNavMenuItem href="loans" text="Gestión de deudas" />
-				{#if checkPermissions([PRESIDENT[1]], user_permissions)}<SideNavMenuItem href="give_loans" text="Dar préstamos" />{/if}
-				{#if checkPermissions([PRESIDENT[1]], user_permissions)}<SideNavMenuItem href="pay_loans" text="Pagar préstamos" />{/if}
-			</SideNavMenu>
-
-			{#if checkPermissions([ODT_CREATE[1]], user_permissions) || checkPermissions([ODT_UPDATE[1]], user_permissions) || checkPermissions([ADMIN_EXPENSES_CREATE[1]], user_permissions)}
-				<SideNavMenu text="Gestión de ODTs">
-					{#if checkPermissions([PRESIDENT[1]], user_permissions)}<SideNavMenuItem href="limit_resources" text="Limitación de recursos" />{/if}
-					{#if checkPermissions([PRESIDENT[1]], user_permissions)}<SideNavMenuItem href="odt_quotation" text="Nueva cotización"/>{/if}
-					{#if checkPermissions([ODT_CREATE[1]], user_permissions)}<SideNavMenuItem href="nueva_odt" text="Nueva ODT"/>{/if}
-					{#if checkPermissions([ODT_UPDATE[1]], user_permissions)}<SideNavMenuItem href="cerrar_odt" text="Cerrar ODT"/>{/if}
-					{#if checkPermissions([ODT_READ[1]], user_permissions)}<SideNavMenuItem href="odts_review" text="Registro ODTs"/>{/if}
-					{#if checkPermissions([ODT_READ[1]], user_permissions)}<SideNavMenuItem href="quotations_review" text="Registro cotizaciones"/>{/if}
-				</SideNavMenu>
-			{/if}
-
-			{#if checkPermissions([INV_ODT_EXPENSES_CREATE[1]], user_permissions) || checkPermissions([ADMIN_EXPENSES_CREATE[1]], user_permissions) || checkPermissions([GENERAL_EXPENSES_CREATE[1]], user_permissions) || checkPermissions([EXCHANGE_CURRENCY_CREATE[1]], user_permissions)}
-				<SideNavMenu text="Gestión de gastos">
-					{#if checkPermissions([GENERAL_EXPENSES_CREATE[1]], user_permissions)}<SideNavMenuItem href="gastos_generales" text="Gastos generales"/>{/if}
-					{#if checkPermissions([ADMIN_EXPENSES_CREATE[1]], user_permissions) || checkPermissions([EXCHANGE_CURRENCY_CREATE[1]], user_permissions)}<SideNavMenuItem href="gasto_admin" text="Gastos administrativos" />{/if}
-					{#if checkPermissions([INV_ODT_EXPENSES_CREATE[1]], user_permissions)}<SideNavMenuItem href="gasto_inventario" text="Gastos de inventario" />{/if}
-				</SideNavMenu>
-			{/if}
-
-			{#if checkPermissions([EXCHANGE_CURRENCY_CREATE[1]], user_permissions) || checkPermissions([PRESIDENT[1]], user_permissions) || checkPermissions([STOCKS_READ[1]], user_permissions)}
-				<SideNavMenu text="Gestión monetaria">
-					{#if checkPermissions([PRESIDENT[1]], user_permissions)}<SideNavMenuItem href="investments" text="Inversiones"/>{/if}
-					{#if checkPermissions([PRESIDENT[1]], user_permissions)}<SideNavMenuItem href="money_incomes" text="Ingreso de dinero"/>{/if}
-					{#if checkPermissions([EXCHANGE_CURRENCY_CREATE[1]], user_permissions)}<SideNavMenuItem href="cambio_moneda" text="Cambios de moneda"/>{/if}
-					{#if checkPermissions([ODT_UPDATE[1]], user_permissions)}<SideNavMenuItem href="money_transfer" text="Transferencias"/>{/if}
-					{#if checkPermissions([PRESIDENT[1]], user_permissions)}<SideNavMenuItem href="balances" text="Balance"/>{/if}
-					{#if checkPermissions([PRESIDENT[1]], user_permissions)}<SideNavMenuItem href="balance_registers" text="Registros de balances"/>{/if}
-					{#if checkPermissions([PRESIDENT[1]], user_permissions)}<SideNavMenuItem href="create_account" text="Crear cuenta bancaria"/>{/if}
-					{#if checkPermissions([PRESIDENT[1]], user_permissions)}<SideNavMenuItem href="movements_review" text="Cierre"/>{/if}
-					{#if checkPermissions([PRESIDENT[1]], user_permissions)}<SideNavMenuItem href="payroll" text="Nómina"/>{/if}
-				</SideNavMenu>
-			{/if}
-
-			{#if checkPermissions([STOCKS_READ[1]], user_permissions) || checkPermissions([INV_PURCHASES_CREATE[1]], user_permissions) || checkPermissions([STOCKS_CREATE[1]], user_permissions) || checkPermissions([STORAGES_CREATE[1]], user_permissions) || checkPermissions([PRESIDENT[1]], user_permissions)}
-				<SideNavMenu text="Gestión de inventario">
-					{#if checkPermissions([STOCKS_READ[1]], user_permissions)}<SideNavMenuItem href="inventory_review" text="Registro de inventario"/>{/if}
-					{#if checkPermissions([STOCKS_READ[1]], user_permissions)}<SideNavMenuItem href="control_inv" text="Control de inventario"/>{/if}
-					{#if checkPermissions([INV_PURCHASES_CREATE[1]], user_permissions)}<SideNavMenuItem href="reposicion_inv" text="Reposicion de Inventario"/>{/if}
-					{#if checkPermissions([STOCKS_CREATE[1]], user_permissions)}<SideNavMenuItem href="ingreso_spendable_inv" text="Ingreso de Inventario consumible"/>{/if}
-					{#if checkPermissions([STOCKS_CREATE[1]], user_permissions)}<SideNavMenuItem href="ingreso_no_spendable_inv" text="Ingreso de Inventario no consumible"/>{/if}
-					{#if checkPermissions([STOCKS_CREATE[1]], user_permissions)}<SideNavMenuItem href="ingreso_storages" text="Registrar almacenes"/>{/if}
-					{#if checkPermissions([STOCKS_CREATE[1]], user_permissions)}<SideNavMenuItem href="ingreso_suppliers" text="Registrar proveedores"/>{/if}
-				</SideNavMenu>
-			{/if}
-			
-		{/if}
-	</SideNavItems>
-	
-  </SideNav>
-  
-  <Content>
-	  <slot></slot>
-  </Content>
-
-<div class="notifications">
-	{#each $notifications as notification, index (index)}
-		{#if notification}
-			{#if notification.caption}
-				<ToastNotification {...notification}/>
-			{:else}
-				<InlineNotification {...notification}/>
-			{/if}
-		{/if}
-	{/each}
-	<!-- {#if $notifications}<ToastNotification {...$notifications} /> {/if} -->
-</div>
-
-<Loader></Loader>
+<script>
+    import Logout32 from 'carbon-icons-svelte/lib/Logout32';
+    import { goto,stores } from '@sapper/app';
+    import { onMount } from 'svelte';
+    import { session,notifications } from '../stores';
+    import { canPage,pageAccess } from '../security/access';
+    import { Header,HeaderUtilities,HeaderAction,HeaderGlobalAction,HeaderPanelLinks,HeaderPanelDivider,HeaderPanelLink,SideNav,SideNavItems,SideNavMenu,SideNavMenuItem,SideNavLink,SkipToContent,Content,InlineNotification,ToastNotification } from 'carbon-components-svelte';
+    import Loader from '../components/Loader.svelte';
+    export let authUser=null;
+    const {page:currentPage}=stores();
+    let allowedPath=null,accessVersion=0,accessError='';
+    // Sapper reuses layouts during client navigation. Recheck before mounting the next page.
+    $: if(process.browser) verifyPage($currentPage.path);
+    async function verifyPage(path){
+        const version=++accessVersion;allowedPath=null;accessError='';
+        if(pageAccess(path)==='public'){if(path==='/login')authUser=null;allowedPath=path;return;}
+        try{
+            const response=await fetch('/api/auth/access?path='+encodeURIComponent(path));
+            if(version!==accessVersion)return;
+            if(response.status===401){authUser=null;await goto('/login');return;}
+            if(response.status===403){await goto('/sin_acceso');return;}
+            if(!response.ok){accessError='No se pudo verificar el acceso. Inténtalo nuevamente.';return;}
+            const result=await response.json();if(version!==accessVersion)return;
+            authUser=result.session;allowedPath=path;
+        }catch(error){if(version===accessVersion)accessError='No se pudo verificar el acceso. Inténtalo nuevamente.';}
+    }
+    $: $session=authUser;
+    let isSideNavOpen=false,isOpen=false;
+    onMount(()=>{isSideNavOpen=window.innerWidth>=1056;});
+    const groups=[
+        ['Gestión de usuarios',[
+            ['/signup','Crear usuario'],['/ingreso_clients','Crear cliente'],['/asignar_responsabilities','Asignar responsabilidad'],['/ingreso_responsabilities','Crear responsabilidad'],['/approve_responsabilities','Aprobar responsabilidad'],['/responsabilities','Responsabilidades'],['/attendance','Asistencia'],['/asign_hours_odt','Horas por ODT'],['/loans','Gestión de deudas'],['/give_loans','Dar préstamos'],['/pay_loans','Pagar préstamos']]],
+        ['Gestión de ODTs',[
+            ['/limit_resources','Limitación de recursos'],['/odt_quotation','Nueva cotización'],['/nueva_odt','Nueva ODT'],['/abonos_odt','Abonos de ODT'],['/cerrar_odt','Cerrar ODT'],['/odts_review','Registro ODTs'],['/quotations_review','Registro cotizaciones']]],
+        ['Gestión de gastos',[
+            ['/gastos_generales','Gastos generales'],['/gasto_admin','Gastos administrativos'],['/gasto_inventario','Gastos de inventario']]],
+        ['Gestión monetaria',[
+            ['/investments','Inversiones'],['/money_incomes','Ingreso de dinero'],['/cambio_moneda','Cambios de moneda'],['/money_transfer','Transferencias'],['/balances','Balance'],['/balance_registers','Registros de balances'],['/create_account','Crear cuenta bancaria'],['/movements_review','Cierre'],['/payroll','Nómina']]],
+        ['Gestión de inventario',[
+            ['/inventory_review','Registro de inventario'],['/control_inv','Control de inventario'],['/reposicion_inv','Reposición de inventario'],['/ingreso_spendable_inv','Ingreso de inventario consumible'],['/ingreso_no_spendable_inv','Ingreso de inventario no consumible'],['/ingreso_storages','Registrar almacenes'],['/ingreso_suppliers','Registrar proveedores']]]
+    ];
+    $: visibleGroups=groups.map(([label,links])=>[label,links.filter(([path])=>canPage($session,path))]).filter(([,links])=>links.length);
+    async function logout(){
+        const response=await fetch('/api/user',{method:'DELETE'});
+        if(response.ok){authUser=null;$session=null;await goto('/login');}
+    }
+</script>
+<style>.notifications{position:fixed;display:flex;flex-direction:column-reverse;bottom:0;right:0;z-index:9999}</style>
+<Header href={canPage($session,'/')?'/':'/attendance'} company="Taionca" platformName="Página Web" bind:isSideNavOpen>
+    <div slot="skip-to-content"><SkipToContent/></div>
+    <HeaderUtilities>
+        {#if $session}
+            <HeaderAction bind:isOpen><HeaderPanelLinks><HeaderPanelDivider>Preferencias de usuario</HeaderPanelDivider><HeaderPanelLink href="/change_password">Cambiar contraseña</HeaderPanelLink></HeaderPanelLinks></HeaderAction>
+            <HeaderGlobalAction on:click={logout} aria-label="Cerrar sesión" iconDescription="Cerrar sesión" icon={Logout32}/>
+        {/if}
+    </HeaderUtilities>
+</Header>
+<SideNav ariaLabel="Navegación principal" bind:isOpen={isSideNavOpen}><SideNavItems>
+    {#if !$session}<SideNavLink href="/login" text="Inicio de sesión"/>
+    {:else}
+        {#if $session.is_admin}<SideNavLink href="/administracion_permisos" text="Administrar permisos"/>{/if}
+        {#each visibleGroups as [label,links]}<SideNavMenu text={label} aria-label={label}>{#each links as [path,text]}<SideNavMenuItem href={path} {text}/>{/each}</SideNavMenu>{/each}
+    {/if}
+</SideNavItems></SideNav>
+<Content>{#if pageAccess($currentPage.path)==='public' || (process.browser && allowedPath===$currentPage.path)}<slot/>{:else if accessError}<p role="alert">{accessError}</p><button on:click={()=>verifyPage($currentPage.path)}>Reintentar acceso</button>{:else}<p role="status">Verificando acceso…</p>{/if}</Content>
+<div class="notifications">{#each $notifications as notification,index (index)}{#if notification}{#if notification.caption}<ToastNotification {...notification}/>{:else}<InlineNotification {...notification}/>{/if}{/if}{/each}</div>
+<Loader/>

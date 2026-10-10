@@ -1,41 +1,7 @@
-import { checkPermissions } from "../functions";
+import { authorizeApi } from './authorization';
 
-
-/**
- * @param {[string, number][]} permissionsRequired
- * @param {{session: {user: {permissions: number[]}}}} req
- * @param {*} res
- * @param {*} next
- */
-const checkPermissions_semiMW = async (permissionsRequired, req, res, next) => {
-    const {permissions: userPermissions} = req.session.user;
-
-    let permissions_names=[], permissions_ids=[];
-    permissionsRequired.forEach( permission => {
-        const [name, id] = permission;
-        permissions_names.push(name);
-        permissions_ids.push(id);
-    })
-
-    const isAuthorized = checkPermissions(permissions_ids, userPermissions);
-    if (isAuthorized) return next();
-
-    res.statusCode=403;
-    res.json({
-        error: `No está autorizado para realizar esta acción.\n Necesita los siguientes permisos: ${permissions_names.join(', ')}`,
-    })
+// Compatibility for composed legacy handlers. All authorization comes from the
+// shared method/path policy, including custom permissions created by the admin.
+export default function checkPermissionsMW() {
+    return (req,res,next) => req.authorized ? next() : authorizeApi(req,res,next);
 }
-
-/**
- * Pass as arguments all permissions you need to validate
- *
- * @param  {...(string | number)[]} permissionsRequired - List of `permission_id` to be validated
- *
- * @return {import("polka").Middleware}
- */
-function checkPermissionsMW (...permissionsRequired) {
-    // @ts-ignore
-    return (req, res, next) => checkPermissions_semiMW(permissionsRequired, req, res, next);
-}
-
-export default checkPermissionsMW;

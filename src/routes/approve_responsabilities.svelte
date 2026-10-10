@@ -22,7 +22,7 @@
     ]
 
 	let rows=[];
-	$: if (awaiting_approval_responsibilitys && awaiting_approval_responsibilitys.length > 0){
+	$: if (awaiting_approval_responsibilitys){
 		id = 0;
 		rows = awaiting_approval_responsibilitys.map(responsibility => ({
 			
@@ -70,6 +70,6 @@
 <DataTable title="Responsabilidades" description="Seleccione la responsabilidad completada" sortable radio bind:selectedRowIds {headers} {rows} />
 
 <ButtonSet>
-	<Button on:click={reject_responsibility} kind="danger">Rechazar</Button>
-	<Button on:click={approve_responsibility}>Aprobar</Button>
+	<Button disabled={!selectedRowIds || !selectedRowIds.length} on:click={reject_responsibility} kind="danger">Rechazar</Button>
+	<Button disabled={!selectedRowIds || !selectedRowIds.length} on:click={approve_responsibility}>Aprobar</Button>
 </ButtonSet>

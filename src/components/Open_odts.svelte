@@ -1,12 +1,13 @@
 <script>
 	import 'carbon-components-svelte/css/white.css';
     import { DataTable, Grid, Row, Column, Button } from "carbon-components-svelte";
-	import Odts from './Odts.svelte';
-	import { apiFetch, checkPermissions } from '../functions';
+	import Odt_payment_history from './Odt_payment_history.svelte';
+    import Odts from './Odts.svelte';
+	import { apiFetch } from '../functions';
     import PercentInput from './PercentInput.svelte';
-    import { onMount, tick } from 'svelte';
+    import { tick } from 'svelte';
 	import { session } from '../stores';
-	import { PRESIDENT } from '../constants/PERMISSIONS';
+	import { allows } from '../security/access';
 
 	export let start_date;
 	export let end_date;
@@ -14,22 +15,22 @@
 
 	let admin_percent;
 	let odt;
+    let paymentSummary = null;
+    let paymentError = '';
+    let paymentSelection;
+    $: loadPayments(odt && odt.id_odt);
+    async function loadPayments(id) {
+        paymentSelection = id; paymentSummary = null; paymentError = '';
+        if (!id) return;
+        try {
+            const result = await apiFetch('/api/public/odt_payments/' + id);
+            if (paymentSelection === id) paymentSummary = result.data;
+        } catch (err) { if (paymentSelection === id) paymentError = err.message; }
+    }
 	let balance_movements = [];
 	let isDisabled = true;
 
-	onMount(async ()=>{
-		const result = await apiFetch("/api/user");
-		$session = result.session;
-		await tick();
-		check_permissions();
-	})
-
-	function check_permissions(){
-		let user_permissions = ($session && $session.permissions) || [];
-		if (checkPermissions([PRESIDENT[1]], user_permissions)){
-			isDisabled = false;
-		}
-	}
+	$: isDisabled = !allows($session, ['odts.limits']);
 
 	async function update_admin_percent(){
 		await apiFetch("/api/public/update_admin_percent",{
@@ -149,6 +150,12 @@
 			</Column>
 		</Row>		
 	</Grid>
+    {#if paymentSummary}
+        <p>Abonado: {paymentSummary.paid_amount} {paymentSummary.currency_code} · Pendiente: {paymentSummary.remaining_amount} {paymentSummary.currency_code}</p>
+        {#if allows($session,['odts.payments'])}<p><a href={'/abonos_odt?odt=' + odt.id_odt}>Registrar abonos de esta ODT</a></p>{/if}
+        <Odt_payment_history summary={paymentSummary} />
+    {/if}
+    {#if paymentError}<p role="alert">{paymentError}</p>{/if}
 
 	{#if rows_balance_movements.length!=0 || rows_currencies.length!=0}
 		<DataTable size="short" title="Gastos por moneda" sortable headers={headers_currencies} rows={rows_currencies} />

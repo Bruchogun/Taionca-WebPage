@@ -1,22 +1,10 @@
-import { compose } from "compose-middleware";
-import { USERS_READ } from "../../../constants/PERMISSIONS";
-import checkPermissionsMW from "../../../middlewares/checkPermissionsMW";
-
-export const post =
-    async (req, res) => {
-        const { id_pending_responsibility, description_evidence } = req.body;
-        console.log("HOLAAA", id_pending_responsibility, description_evidence);
-        const {rows: awaiting_approval_responsibilitys} = await res.sql`
-
-            INSERT INTO public.awaiting_approval_responsibilitys
-                ( id_pending_responsibility, description_evidence )
-                VALUES ( ${id_pending_responsibility}::integer, ${description_evidence}::character varying )
-                RETURNING id_awaiting_approval_responsibility;
-        `;
-
-        res.json({
-            success: `Responsabilidad enviada para su revisión.`,
-            awaiting_approval_responsibilitys
-        });
-    }
-     
+import { transaction,invalid } from '../../../lib/api-transaction';
+export const post=transaction(async(req,client)=>{
+ const {id_pending_responsibility,description_evidence}=req.body;
+ if(typeof description_evidence!=='string'||!description_evidence.trim()) invalid('Incluya la evidencia de la responsabilidad.');
+ const pending=(await client.query('SELECT p.*,a.id_user FROM pending_responsibilitys p JOIN active_responsibilitys a USING(id_active_responsibility) WHERE id_pending_responsibility=$1',[id_pending_responsibility])).rows[0];
+ if(!pending) invalid('Responsabilidad pendiente no encontrada.',404);
+ if(pending.id_user!==req.session.user.user_id) invalid('Solo la persona asignada puede enviar esta responsabilidad.',403);
+ const {rows}=await client.query('INSERT INTO awaiting_approval_responsibilitys(id_pending_responsibility,description_evidence) VALUES($1,$2) RETURNING *',[id_pending_responsibility,description_evidence]);
+ return {success:'Responsabilidad enviada para su revisión.',awaiting_approval_responsibilitys:rows};
+});

@@ -22,9 +22,9 @@
 		}
 	}
 
-	function create_exchange_currency(){
+	async function create_exchange_currency(){
 
-		apiFetch("/api/public/exchange_currency",{
+		await apiFetch("/api/public/exchange_currency",{
 			method: 'POST',
 			body: JSON.stringify({
 				description,

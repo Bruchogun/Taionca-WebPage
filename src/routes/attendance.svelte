@@ -1,4 +1,5 @@
 <script>
+	import { allows } from '../security/access';
     import 'carbon-components-svelte/css/white.css';
     import { Button, ContentSwitcher, DataTable, Switch, Toolbar, ToolbarContent, ToolbarSearch } from "carbon-components-svelte";
 	import { apiFetch } from '../functions';
@@ -45,8 +46,11 @@
 				departure_date: set_date(departure_time) //Hora de salida
 			}),
 			headers: {'Content-Type': 'application/json'}
-		})
+		});
 
+		({attendances, user_id} = await apiFetch('/api/public/get_attendance'));
+		await set_chart_data();
+		filter_rows();
 		cleanWindows();
 	}
 
@@ -67,7 +71,7 @@
 	let rows= [];
 	async function set_chart_data(){
 		let attendance_filtered;
-		if((await $session)?.special_user){
+		if(allows($session,['attendance.read_all'])){
 			headers = [
 				{ key: 'user', value: 'Usuario' }, 
 				{ key: 'entry_date', value: 'Llegada' },
@@ -87,7 +91,7 @@
 					id: attendance.id_attendance,
 					user: attendance.name,
 					entry_date: new Date(attendance.entry_date).toLocaleString([], options),
-					departure_date: new Date(attendance.departure_date).toLocaleString([], options),
+					departure_date: attendance.departure_date ? new Date(attendance.departure_date).toLocaleString([], options) : 'Pendiente',
 					created_at: new Date(attendance.created_at).toLocaleString([], options),
 		}));
 	}
@@ -147,7 +151,7 @@
 		<ToolbarContent>
 			<ToolbarSearch
 				persistent
-				value
+				bind:value
 				on:input={filter_rows}
 			/>
 		</ToolbarContent>

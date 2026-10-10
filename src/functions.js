@@ -1,5 +1,7 @@
+import { initialDate } from './lib/responsibility-dates';
 import {notifications, loadingIsActive} from "./stores"
 import fetch from "node-fetch";
+import { exchangeRate } from "./lib/currency";
 import { goto } from '@sapper/app'
 
 /**
@@ -21,19 +23,17 @@ export const checkPermissions = (permissions_ids, userPermissions) => {
  * se debe hacer previamente un query para obtener la moneda de la ODT
  */
 export async function getRate(counter_currency_code, base_currency_code){
+    counter_currency_code = String(counter_currency_code || '').trim().toUpperCase();
+    base_currency_code = String(base_currency_code || '').trim().toUpperCase();
+    if (!counter_currency_code || !base_currency_code) throw new Error('La moneda es obligatoria.');
     if (counter_currency_code === base_currency_code) {
         return 1;
     }
     const url = `https://openexchangerates.org/api/latest.json?app_id=5b9fa9d2985e417086b2ebfe191d4e78`;
     const response = await fetch(url);
     const rates = await response.json();
-    if(base_currency_code !== "USD" ){
-        const rate = Number(rates.rates[counter_currency_code])/Number(rates.rates[base_currency_code]);
-        return rate;
-    }else{
-        const rate = rates.rates[counter_currency_code];
-        return rate;
-    }
+    if (!response.ok || !rates.rates) throw new Error('No se pudieron consultar las tasas de cambio.');
+    return exchangeRate(rates.rates, counter_currency_code, base_currency_code);
 }
 
 /**
@@ -59,86 +59,7 @@ export function notify(title, kind="error", subtitle="", caption=undefined) {
 }
 
 export function next_date(deadline, term, days_to_repeat){
-    const terms_in_unix = {
-        day: 86400000,
-        week: 86400000 * 7,
-        every_x_days: 86400000 * days_to_repeat
-    };
-    let current_date = new Date(new Date().toLocaleDateString());
-    switch (term) {
-        case "daily": //This event will happen each day starting in deadline
-            if(new Date(deadline) > current_date){
-                return new Date(deadline);
-            }else{
-                return new Date(new Date (+new Date (deadline) + terms_in_unix.day).toLocaleDateString());
-            }
-        case "weekly": //This event will happen each week at the day selected in deadline
-            if(new Date(deadline) > current_date){
-                return new Date(deadline);
-            }else{
-                return new Date(new Date (+new Date (deadline) + terms_in_unix.week).toLocaleDateString());
-            }
-        case "biweekly": //This event will happen each 15th and last day of each month *DOES NOT start at deadline*
-            let new_deadline = new Date(new Date(deadline).toLocaleDateString());
-            let current_month = new_deadline.getMonth();
-            let current_year = new_deadline.getFullYear();
-            if(new_deadline <= new Date(current_year, current_month, 15)){
-                return new Date(current_year, current_month, 15);
-            }else if(new_deadline > new Date(current_year, current_month, 15) && new_deadline <= new Date(current_year, current_month+1, 0)){
-                return new Date(current_year, current_month+1, 0);
-            }
-        case "monthly": //This event will happen each month at the day selected in deadline
-            if(new Date(deadline) > current_date){
-                return new Date(deadline);
-            }else{
-                let day = new Date(deadline).getDate();
-                let month = new Date(deadline).getMonth();
-                let year = new Date(deadline).getFullYear();
-                return new Date(year, month+1, day);
-            }
-        case "bimonthly": //This event will happen each two months at the day selected in deadline
-            if(new Date(deadline) > current_date){
-                return new Date(deadline);
-            }else{
-                let day = new Date(deadline).getDate();
-                let month = new Date(deadline).getMonth();
-                let year = new Date(deadline).getFullYear();
-                return new Date(year, month+2, day);
-            }
-        case "quarterly": //This event will happen each three months at the day selected in deadline
-            if(new Date(deadline) > current_date){
-                return new Date(deadline);
-            }else{
-                let day = new Date(deadline).getDate();
-                let month = new Date(deadline).getMonth();
-                let year = new Date(deadline).getFullYear();
-                return new Date(year, month+3, day);
-            }
-        case "biannual": //This event will happen each six months at the day selected in deadline
-            if(new Date(deadline) > current_date){
-                return new Date(deadline);
-            }else{
-                let day = new Date(deadline).getDate();
-                let month = new Date(deadline).getMonth();
-                let year = new Date(deadline).getFullYear();
-                return new Date(year, month+6, day);
-            }
-        case "yearly": //This event will happen each year at the day selected in deadline
-            if(new Date(deadline) > current_date){
-                return new Date(deadline);
-            }else{
-                let day = new Date(deadline).getDate();
-                let month = new Date(deadline).getMonth();
-                let year = new Date(deadline).getFullYear();
-                return new Date(year+1, month, day);
-            }
-        case "every x days": //This event will happen each X days starting in deadline
-            if(new Date(deadline) > current_date){
-                return new Date(deadline);
-            }else{
-                return new Date(new Date (+new Date (deadline) + terms_in_unix.every_x_days).toLocaleDateString());
-            }
-    }
+    return initialDate(deadline, term, days_to_repeat);
 }
 
 export function format_number(amount, option){

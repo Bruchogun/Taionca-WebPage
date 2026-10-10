@@ -33,7 +33,7 @@
 	}
 	let id = 0;
 	let rows=[];
-	$: if (pending_responsibilitys && pending_responsibilitys.length > 0){
+	$: if (pending_responsibilitys){
 		id = 0;
 		rows = pending_responsibilitys.map(responsibility => ({
 			
@@ -75,4 +75,4 @@
 
 <TextArea placeholder="Anexe link de soporte y en caso de ser necesario anexe algún comentario" bind:value={description}/>
 
-<Button on:click={send_responsibility}>Enviar</Button>
+<Button disabled={!selectedRowIds || !selectedRowIds.length || !description} on:click={send_responsibility}>Enviar</Button>

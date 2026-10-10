@@ -15,6 +15,8 @@
 	}
 
 </script>
+<p role="status">La solicitud de cambio de moneda todavía no está implementada. Esta pantalla no registra solicitudes.</p>
+
 
 <TextInput type="number" labelText="Monto necesitado" placeholder="Ingrese el monto..." bind:value={amount}/>
 
@@ -24,4 +26,4 @@
 
 <TextArea labelText="Descripción" placeholder="Ingrese la descripción del cambio de moneda..." bind:value={description}/>
 
-<Button on:click={create_request_exchange_currency}>Enviar</Button>
+<Button disabled>Enviar</Button>

@@ -1,9 +1,21 @@
-import { sql } from "../../../../db";
+import { settlementDetails } from '../../../../lib/odt-settlement-data';
+import { paymentSummary, paymentError } from '../../../../lib/odt-payment-data';
+import { validId } from '../../../../lib/odt-closure';
+import { sql, pool } from "../../../../db";
 
 // List odt_closure_resume
 export const get =
     async (req, res) => {
         const {id_odt} = req.params;
+        const user = req.session && req.session.user;
+        if (!user) { res.statusCode=401; return res.json({error:'Debes iniciar sesión.'}); }
+        if (!req.authorized) {
+            res.statusCode=403; return res.json({error:'No tienes permiso para consultar ODTs.'});
+        }
+        if (!validId(id_odt)) { res.statusCode=400; return res.json({error:'Selecciona una ODT válida.'}); }
+        let payments;
+        try { payments = await paymentSummary(pool,id_odt,user.user_id); }
+        catch (err) { return paymentError(res,err); }
 
         const {rows: odt_closure_resume} = await sql`
 
@@ -69,8 +81,15 @@ export const get =
             )  
             SELECT 
                 closure_odts.id_closure_odt as id_closure_odt,
+                closure_odts.id_account,
+                coalesce(accounts.name,(SELECT string_agg(DISTINCT a.name, ', ') FROM odt_payments p
+                    JOIN accounts a USING(id_account) WHERE p.id_odt=closure_odts.id_odt)) as account_name,
+                closure_odts.settled_from_payments,
+                closure_odts.amount as paid_amount,
+                closure_odts.admin_expense_percent,
+                closure_odts.gross_profit,
 
-                (closure_odts.amount * closure_odts.admin_expense_percent) as admin_profit,
+                round(closure_odts.amount * closure_odts.admin_expense_percent, 10) as admin_profit,
                 closure_odts.taionca_profit as taionca_profit,
                 closure_odts.general_expense as general_expenses,
                 closure_odts.inv_expense as inv_expenses,
@@ -105,19 +124,22 @@ export const get =
                 ) as supervisor_commissions
             
             from closure_odts
+            LEFT JOIN accounts ON accounts.id_account = closure_odts.id_account
             LEFT JOIN ceo_commissions ON closure_odts.id_closure_odt = ceo_commissions.id_closure_odt
             LEFT JOIN admin_commissions ON closure_odts.id_closure_odt = admin_commissions.id_closure_odt
             LEFT JOIN operative_commissions ON closure_odts.id_closure_odt = operative_commissions.id_closure_odt
             LEFT JOIN supervisor_commissions ON closure_odts.id_closure_odt = supervisor_commissions.id_closure_odt
 
             WHERE closure_odts.id_odt = ${id_odt}
-            GROUP BY closure_odts.id_closure_odt;
+            GROUP BY closure_odts.id_closure_odt, accounts.name;
             `
         ;
 
         res.json({
             success: "Resumen de la ODT cargado exitosamente.",
-            odt_closure_resume: odt_closure_resume[0]
+            odt_closure_resume: odt_closure_resume[0],
+            payments,
+            currency_settlement: await settlementDetails(pool,id_odt)
         }
         );
     }

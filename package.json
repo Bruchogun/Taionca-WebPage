@@ -9,13 +9,15 @@
     "dev": "sapper dev",
     "build": "run-s build:db build:sapper",
     "build:sapper": "sapper build",
-    "build:db": "run-s 'migrate up' build:permissions.js",
+    "build:db": "run-s \"migrate up\" build:permissions.js",
     "build:permissions.js": "node -r esm ./src/scripts/build_permissions_constants.js",
     "export": "sapper export",
     "start": "node __sapper__/build",
     "create:permission": "node -r esm ./src/scripts/create_permission.js",
     "create:crudPermissions": "node -r esm ./src/scripts/create_crudPermissions.js",
-    "migrate": "node-pg-migrate"
+    "migrate": "node-pg-migrate",
+    "test": "node scripts/test.js",
+    "test:all": "node scripts/test.js --build"
   },
   "dependencies": {
     "argon2": "^0.27.0",

@@ -25,7 +25,7 @@
 					id_account: accountId,
 					name: item.name,
 					currency_symbol: item.symbol,
-					currency_code: item.code,
+					currency_code: (item.code || '').toUpperCase(),
 					total_balance: 0,
 					balance_count: 0
 				};
@@ -69,7 +69,7 @@
 		return acc;
 		}, {});
 
-		currencyOrder = ['USD', 'VES', 'COP', 'EUR', 'BTC'];
+		currencyOrder = [...new Set(['USD', 'VES', 'COP', 'EUR', 'BTC', ...Object.keys(accountsByCurrency)])];
 
 		// Sort accounts within each currency: non-zero balances first, then zero balances
 		Object.keys(accountsByCurrency).forEach(currency => {

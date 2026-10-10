@@ -1,10 +1,12 @@
 export default async (req, res, next)=>{
     const body = {...req.body};
-        delete body.password
+    for (const key of ['password', 'old_password', 'new_password']) delete body[key];
     const path = req.originalUrl;
     const method = req.method;
     const params = req.params;
-    const headers = req.headers;
+    const headers = {...req.headers};
+    delete headers.cookie;
+    delete headers.authorization;
     const user_session = req.session.user;
 
     const result = await res.sql`

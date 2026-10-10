@@ -1,7 +1,11 @@
+import { safeOdtExpense } from '../../../lib/odt-expense-errors';
 import { query } from "../../../db";
 
-export const post = async (req, res) => {
+export const post = safeOdtExpense(async (req, res) => {
     const { id_spendable_stock, id_account, quantity, cost, id_item } = req.body;
+    if (!Number.isFinite(Number(quantity)) || Number(quantity)<=0 || !Number.isFinite(Number(cost)) || Number(cost)<=0) {
+        res.statusCode=400; return res.json({error:'Ingrese cantidad y costo positivos.'});
+    }
     const {rows: result} = await query(
         `
             WITH _t as (
@@ -45,5 +49,4 @@ export const post = async (req, res) => {
         success:"Inventario repuesto exitosamente",
         result
     });
-}
-
+});

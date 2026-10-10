@@ -24,12 +24,11 @@
         }
     }
 
-    $: users_profit = users_profit.map(user_profit => {
-        return {
-            ...user_profit,
-            id_user: user_profit.user.value
-        }
-    })
+    function selectUser(index, user) {
+        users_profit = users_profit.map((entry, i) => i === index
+            ? { ...entry, user, id_user: user && user.value }
+            : entry);
+    }
 
 </script>
 
@@ -47,13 +46,13 @@
     <h4>{label}</h4>
     {#each users_profit as user_profit, index}
         <div class="OnSameLine">
-            <Users bind:user={user_profit.user} />
+            <Users bind:user={user_profit.user} on:select={event => selectUser(index, event.detail)} />
         
             <PercentInput bind:value={user_profit.profit_percent}/>
         
-            <Button kind="danger" hasIconOnly iconDescription="Borrar" icon={TrashCan16} on:click={removeUserProfitBuilder(index)}/>
+            <Button kind="danger" hasIconOnly iconDescription="Borrar" icon={TrashCan16} type="button" on:click={removeUserProfitBuilder(index)}/>
         </div>
     {/each}
     
-    <Button on:click={addUserProfit}>Agregar usuario</Button>
+    <Button type="button" on:click={addUserProfit}>Agregar usuario</Button>
 </div>

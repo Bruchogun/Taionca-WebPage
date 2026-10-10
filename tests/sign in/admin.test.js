@@ -1,21 +1,17 @@
-import { expect, test } from '@playwright/test';
+const { test, expect } = require('@playwright/test');
 
-test('login', async ({ page }) => {
-    await page.goto('http://localhost:3000/login');
-
-    await page.getByPlaceholder('Ingrese su usuario...').click();
+test('login through the page creates a session and opens the dashboard', async ({ page }) => {
+    await page.goto('/login');
     await page.getByPlaceholder('Ingrese su usuario...').fill('admin');
-    await page.getByPlaceholder('Ingrese su contraseña...').click();
-    await page.getByPlaceholder('Ingrese su contraseña...').fill('admin');
-    
-    expect(await page.context().cookies()).toHaveLength(0);
-    
+    await page.getByPlaceholder('Ingrese su contraseña...').fill('test-admin-odt');
     await page.getByRole('button', { name: 'Iniciar sesión' }).click();
-    
-    // wait for navigation
-    await page.waitForURL('/')
+    await expect(page).toHaveURL('/');
+    expect((await page.context().cookies()).some(cookie => cookie.name === 'sessionId')).toBe(true);
+    await expect(page.getByRole('button', {name:'Cerrar sesión'})).toBeVisible();
+});
 
-    // check cookie has been set
-    expect(await page.context().cookies()).toHaveLength(1);
-    await page.context().storageState({ path: 'tests/.auth/admin.json' });
+test('incorrect password does not create an authenticated session', async ({ request }) => {
+    const response = await request.post('/api/public/login', { data: { username: 'admin', password: 'wrong-password' } });
+    expect((await response.json()).error).toBe('Usuario o contraseña incorrecta.');
+    expect((await request.post('/api/public/closure_odt',{data:{}})).status()).toBe(401);
 });

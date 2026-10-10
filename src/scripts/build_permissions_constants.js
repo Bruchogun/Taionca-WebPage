@@ -2,7 +2,7 @@ import { query } from "../db"
 import fs from 'fs'
 
 (async () => {
-    const {rows: permissions} = await query("SELECT permission_id, name FROM permissions");
+    const {rows: permissions} = await query("SELECT permission_id, code AS name FROM permissions WHERE is_system=true");
 
     const constants_js_declarations = permissions.map( ({permission_id, name}) => (`export const ${name.toUpperCase()} = ['${name}', ${permission_id}];`) );
 

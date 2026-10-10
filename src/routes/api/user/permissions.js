@@ -12,7 +12,7 @@ export async function get (req, res) {
         FROM join_users_roles
         JOIN join_roles_permissions USING (role_id)
         JOIN permissions USING (permission_id)
-        WHERE user_id = $1
+        WHERE user_id = $1 AND permissions.deleted_at IS NULL
         GROUP BY permission_id, permissions.name
         ORDER BY permission_id;`,
         [user_id]
