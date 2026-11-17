@@ -51,6 +51,7 @@
         input.income_values=[...values,{id_currency:currency,amount}];input=input;
     }
     $: preview=source && input ? calculateSettlement(source,input) : null;
+    $: incompleteCosts=preview && preview.errors.some(issue=>issue.expense_key || issue.kind==='expense_valuation');
     $: openForDeficit(preview && preview.errors);
     function openForDeficit(errors) {if(errors && errors.some(e=>e.kind==='deficit'||e.expense_key))expensesOpen=true;}
     $: targetAccounts=source && input ? source.accounts.filter(a=>a.id_currency===Number(input.id_currency)) : [];
@@ -115,6 +116,7 @@
                 <article data-expense={expense.expense_key}>
                     <strong>{expense.description || expense.expense_key}</strong>
                     <p>{expense.expense_key} · {expense.source_amount!==null ? 'Original: '+displayMoney(expense.source_amount)+' '+expense.source_code : 'No hay importe contable histórico: indica el monto que debe asumir el cierre.'}</p>
+                    {#if (source.unvalued_legacy_expenses || []).includes(expense.expense_key)}<p class="valuation-pending">Tasa histórica pendiente</p>{/if}
                     <label class="field">Moneda que asume este gasto
                         <select aria-label={'Moneda del gasto ' + expense.expense_key} bind:value={input.expenses[index].id_currency} on:change={()=>changeExpense(index)} disabled={saving}>
                             <option value={null}>Selecciona la moneda</option>
@@ -132,6 +134,7 @@
         {#each input.parts as settings,index (settings.id_currency)}
             <section class="part" data-part-currency={settings.id_currency}>
                 <h3>{input.mode==='split'?'Mini cierre':'Cierre'} en {currencyCode(settings.id_currency)}</h3>
+                {#if incompleteCosts}<p class="valuation-pending" role="status">Total incompleto: gastos pendientes de valoración.</p>{:else}
                 {#each preview.parts.filter(p=>p.id_currency===settings.id_currency) as part}
                     <div data-testid={'part-summary-'+part.id_currency}>
                         <p>Ingresos: <strong>{displayMoney(part.amount)} {part.code}</strong></p>
@@ -142,6 +145,7 @@
                         <p>Administración y comisiones a repartir: {displayMoney(money(part.commissions.reduce((sum,c)=>sum+units(c.profit),units(part.admin_amount))))} {part.code}</p>
                     </div>
                 {/each}
+                {/if}
                 <PercentInput label={'Administración en '+currencyCode(settings.id_currency)} bind:value={input.parts[index].admin_percent} />
                 <PercentInput label={'Presidente en '+currencyCode(settings.id_currency)} bind:value={input.parts[index].ceo_percent} />
                 <details>
@@ -194,5 +198,12 @@
     details { margin: 1.5rem 0; }
     summary { cursor: pointer; font-weight: 600; }
     .error, .negative { color: #a2191f; }
+    .valuation-pending { color: #8a3800; font-weight: 600; }
     .cash-confirmation { background: #fff1e6; }
+    @media (max-width: 600px) {
+        .part :global(.bx--text-input-wrapper--inline) { display: block; }
+        .part :global(.bx--text-input__label-helper-wrapper),
+        .part :global(.bx--text-input__field-outer-wrapper--inline) { width: 100%; max-width: 100%; margin-right: 0; }
+        .part :global(.bx--label--inline) { display: block; max-width: 100%; margin-bottom: .5rem; }
+    }
 </style>

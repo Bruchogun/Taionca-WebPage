@@ -1,6 +1,8 @@
 <script>
     import { displayMoney } from '../lib/money';
+    import { netCompanyProfit } from '../lib/settlement-net-profit';
     export let details;
+    export let supplements = [];
     const roles={ceo:'Presidente',admin:'Administración',operative:'Operación',supervisor:'Supervisión'};
 </script>
 {#if details && details.settlement_mode!=='legacy'}
@@ -13,6 +15,7 @@
                 <p>Inventario: {displayMoney(part.inv_expense)} {part.code}</p>
                 <p>Administración: {displayMoney(part.admin_amount)} {part.code}</p>
                 <p>Utilidad para comisiones: {displayMoney(part.gross_profit)} {part.code}</p>
+                <p>Utilidad neta para Taionca: {displayMoney(netCompanyProfit(part, supplements))} {part.code}</p>
                 <p>Para Taionca, incluidos gastos recuperados: {displayMoney(part.taionca_profit)} {part.code}</p>
                 {#each part.commissions as commission}<p>{roles[commission.role]} · {commission.user_name}: {displayMoney(commission.profit)} {part.code}</p>{/each}
             </article>

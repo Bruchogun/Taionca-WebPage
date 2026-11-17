@@ -3,6 +3,7 @@
     import { DataTable, Grid, Row, Column } from "carbon-components-svelte";
 	import Odt_settlement_history from './Odt_settlement_history.svelte';
     import Odt_payment_history from './Odt_payment_history.svelte';
+    import { displayMoney } from '../lib/money';
     import Closed_odts from './Closed_odts.svelte';
 	import { apiFetch,  format_number } from '../functions';
     import { tick } from 'svelte';
@@ -19,6 +20,7 @@
 	let odt_closure_resume = null;
     let payments = null;
     let currency_settlement = null;
+    let commission_supplements = [];
 	let isDisabled = true;
 	let admin_profit;
 	let taionca_profit;
@@ -29,8 +31,9 @@
 	
 	async function get_odt_movements(){
 		odt_closure_resume = null;
+        commission_supplements = [];
 		({balance_movements} = await apiFetch(`/api/public/odt_movements/${odt.id_odt}`));
-		({odt_closure_resume, payments, currency_settlement} = await apiFetch(`/api/public/odt_closure_resume/${odt.id_odt}`));
+		({odt_closure_resume, payments, currency_settlement, commission_supplements=[]} = await apiFetch(`/api/public/odt_closure_resume/${odt.id_odt}`));
 		await tick();
 		set_data_balance_movements();
 		set_data_currency_movements();
@@ -41,7 +44,7 @@
 			{ key: "entity", value: "Entidad"  },
 			{ key: "account", value: "Cuenta" },
 			{ key: "amount_label", value: "Monto" },
-			{ key: "created_at", value: "Fecha" },
+		{ key: "created_at", value: "Registrado" },
 	];
 
 	let headers_currencies = [
@@ -124,11 +127,27 @@
 	.margin{
 		margin: 10px;
 	}
+    .commission-supplements { margin: 1rem 0; overflow-wrap: anywhere; }
+    .commission-supplements h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
+    .commission-supplements p { margin-bottom: 0.5rem; }
+    .expense-history { width: 100%; min-width: 0; overflow-x: auto; }
+    .expense-history :global(.bx--data-table) { min-width: 32rem; }
 </style>
 
 <Closed_odts bind:odt={odt} on:select={get_odt_movements} {is_filtered} {start_date} {end_date}/>
 
 {#if odt && odt_closure_resume} 
+
+    {#if commission_supplements.length}
+        <section class="commission-supplements" aria-label="Ajustes complementarios de comisiones">
+            <h3>Ajustes complementarios</h3>
+            {#each commission_supplements as supplement (supplement.id_part)}
+                <p>{supplement.user_name}: {format_number(supplement.percent, 'percentage')} sobre utilidad,
+                    {displayMoney(supplement.amount)} {supplement.currency}</p>
+                <p>{supplement.account} · Registrado: {new Date(supplement.recorded_at).toLocaleDateString()}</p>
+            {/each}
+        </section>
+    {/if}
 
 	<Grid narrow>
         <Row><Column><h5>Cuenta de destino: {odt_closure_resume.account_name}</h5></Column></Row>
@@ -160,7 +179,7 @@
 		</Row>
 		<Row>
 			<Column padding style="outline: 1px solid var(--cds-interactive-04)">
-				<h5>Fecha de cierre: {(new Date(odt.closed_at)).toLocaleString("es-ES",options)}</h5>
+				<h5>Fecha de registro del cierre: {(new Date(odt.closed_at)).toLocaleString("es-ES",options)}</h5>
 			</Column>
 		</Row>
 		<Row>
@@ -195,7 +214,7 @@
         {/if}
 	</Grid>
     <Odt_payment_history summary={payments} />
-    <Odt_settlement_history details={currency_settlement} />
+    <Odt_settlement_history details={currency_settlement} supplements={commission_supplements} />
 
 	{#if rows_commissions.length!=0}
 		<div class="margin">
@@ -208,7 +227,12 @@
 			<DataTable size="short" title="Gastos por moneda" sortable headers={headers_currencies} rows={rows_currencies} />
 		</div>	
 		<div class="margin">
-			<DataTable size="short" title="Gastos de la ODT" sortable headers={headers_balance_movements} rows={rows_balance_movements} />
+            <div class="bx--data-table-header">
+                <h4 class="bx--data-table-header__title">Gastos de la ODT</h4>
+            </div>
+            <div class="expense-history">
+                <DataTable size="short" sortable headers={headers_balance_movements} rows={rows_balance_movements} />
+            </div>
 		</div>
 	{/if}
 {/if}

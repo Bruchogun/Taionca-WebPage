@@ -24,9 +24,10 @@ export async function settlementSource(client,id,userId,lock=false) {
     const payroll=(await client.query(`SELECT id_user,id_supervisor,hours_spent,is_paid FROM payroll_odt_hours
         WHERE id_odt=$1 AND hours_spent>0 ORDER BY id_user,id_supervisor,hours_spent,is_paid`,[id])).rows;
     const pending_payroll=payroll.some(p=>p.is_paid!==true);
+    const unvalued_legacy_expenses=(await client.query("SELECT 'general:'||id_general_expense AS expense_key FROM general_expenses WHERE id_odt=$1 AND rate IS NULL ORDER BY id_general_expense",[id])).rows.map(row=>row.expense_key);
     const version=createHash('sha256').update(JSON.stringify({amount:odt.amount,currency:odt.id_currency,admin:odt.admin_percent,
         payments:odt.payments,currencies,expenses,payroll})).digest('hex');
-    return {odt,currencies,payment_accounts,expenses,accounts,pending_payroll,version};
+    return {odt,currencies,payment_accounts,expenses,accounts,pending_payroll,version,unvalued_legacy_expenses};
 }
 
 export async function settleOdt(client,input,userId) {

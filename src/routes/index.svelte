@@ -202,14 +202,24 @@
 <style>
 	.OnSameLine{
 		display: flex;
-		justify-content: space-around;
+		gap: 1rem;
 	}
 
 	.OnSameLine > :global(*){
-		width: 100%;
+		flex: 1;
+		min-width: 0;
+		width: 0;
 	}
+    .dashboard{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:1.5rem}
+    .dashboard>div{min-width:0}
+    .OnSameLine :global(.bx--date-picker),.OnSameLine :global(.bx--date-picker-container){width:100%;min-width:0;max-width:100%}
+    .OnSameLine :global(.bx--date-picker--single .bx--date-picker__input){width:100%;min-width:0;padding-right:2.5rem}
+    .dashboard :global(.bx--data-table){width:100%;table-layout:fixed}
+    .dashboard :global(.bx--data-table th),.dashboard :global(.bx--data-table td){white-space:normal;overflow-wrap:anywhere}
+    @media(max-width:60rem){.dashboard{grid-template-columns:minmax(0,1fr)}}
+    @media(max-width:40rem){.OnSameLine{flex-direction:column}.OnSameLine>:global(*){width:100%}}
 </style>
-<div class="OnSameLine">
+<div class="dashboard">
 	<div>
 		<div class="OnSameLine">
 			{#if DatePicker}
@@ -273,8 +283,5 @@
 
 		<Loans/>
 
-		<div style="min-width: 500px; max-width: 1500px; min-height: 350px;">
-			<!-- <CurrentBalances/> -->
-		</div>
 	</div>
 </div>

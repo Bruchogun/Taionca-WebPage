@@ -1,0 +1,11 @@
+const assert=require('assert'),fs=require('fs'),path=require('path');
+const load=require('esm')(module),{netCompanyProfit}=load('../../src/lib/settlement-net-profit.js');
+const {displayMoney}=load('../../src/lib/money.js');
+const part={id_part:10,code:'USD',gross_profit:'1049.9',commissions:[{profit:'524.95'},{profit:'104.99'},...Array.from({length:4},()=>({profit:'52.495'}))]};
+assert.strictEqual(netCompanyProfit(part),'209.9800000000');
+const other={id_part:11,code:'VES',gross_profit:'100',commissions:[{profit:'20'},{profit:'10'}]};
+assert.strictEqual(netCompanyProfit(other,[{id_part:11,currency:'VES',amount:'5'}]),'65.0000000000');
+assert.strictEqual(netCompanyProfit(other,[{id_part:11,currency:'USD',amount:'500'},{id_part:12,currency:'VES',amount:'500'}]),'70.0000000000');
+assert.strictEqual(netCompanyProfit({id_part:1,code:'USD',gross_profit:'0',commissions:[]}), '0.0000000000');
+assert.strictEqual(displayMoney(netCompanyProfit(part)), '209.98');
+console.log(JSON.stringify({status:'passed',cases:5,database_writes:0}));

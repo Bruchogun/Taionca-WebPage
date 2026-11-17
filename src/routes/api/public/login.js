@@ -16,7 +16,7 @@ export async function post(req,res) {
             RETURNING attempts`,[key])).rows[0];
         if(attempt.attempts>5) {res.statusCode=429;res.setHeader('Retry-After','900');return res.json({error:'Demasiados intentos. Inténtalo en 15 minutos.'});}
         const user=(await query('SELECT user_id,password_hash FROM users WHERE username=$1',[normalized])).rows[0];
-        if(!user || !await argon2.verify(user.password_hash,password)) {res.statusCode=401;return res.json({error:'Usuario o contraseña incorrecta.'});}
+        if(!user || user.password_hash==='!accounting-only!' || !await argon2.verify(user.password_hash,password)) {res.statusCode=401;return res.json({error:'Usuario o contraseña incorrecta.'});}
         const current=await identity(user.user_id);
         await regenerate(req);req.session.user=current;req.user=current;await saveSession(req);
         await query('DELETE FROM login_attempts WHERE key=$1',[key]);

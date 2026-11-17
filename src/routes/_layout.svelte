@@ -55,7 +55,10 @@
         if(response.ok){authUser=null;$session=null;await goto('/login');}
     }
 </script>
-<style>.notifications{position:fixed;display:flex;flex-direction:column-reverse;bottom:0;right:0;z-index:9999}</style>
+<style>
+    .notifications{position:fixed;display:flex;flex-direction:column-reverse;bottom:0;right:0;z-index:9999}
+    @media(max-width:65.99rem){:global(#main-content.bx--content){margin-left:0;padding:1rem}}
+</style>
 <Header href={canPage($session,'/')?'/':'/attendance'} company="Taionca" platformName="Página Web" bind:isSideNavOpen>
     <div slot="skip-to-content"><SkipToContent/></div>
     <HeaderUtilities>

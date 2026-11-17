@@ -7,6 +7,7 @@
   },
   "scripts": {
     "dev": "sapper dev",
+    "dev:local": "powershell -NoProfile -ExecutionPolicy Bypass -File ./start-local.ps1",
     "build": "run-s build:db build:sapper",
     "build:sapper": "sapper build",
     "build:db": "run-s \"migrate up\" build:permissions.js",

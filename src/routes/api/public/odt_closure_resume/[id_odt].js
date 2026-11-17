@@ -1,4 +1,5 @@
 import { settlementDetails } from '../../../../lib/odt-settlement-data';
+import { commissionSupplements } from '../../../../lib/odt-commission-supplements';
 import { paymentSummary, paymentError } from '../../../../lib/odt-payment-data';
 import { validId } from '../../../../lib/odt-closure';
 import { sql, pool } from "../../../../db";
@@ -139,7 +140,8 @@ export const get =
             success: "Resumen de la ODT cargado exitosamente.",
             odt_closure_resume: odt_closure_resume[0],
             payments,
-            currency_settlement: await settlementDetails(pool,id_odt)
+            currency_settlement: await settlementDetails(pool,id_odt),
+            commission_supplements: await commissionSupplements(pool,id_odt)
         }
         );
     }

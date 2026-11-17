@@ -151,7 +151,7 @@
     color: #495057;
     font-size: 13px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0;
   }
 
   .accounts-table td {
@@ -196,6 +196,7 @@
   .balance {
     font-weight: 600;
     color: #212529;
+    white-space: nowrap;
   }
 
   .balance .amount {

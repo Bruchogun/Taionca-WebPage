@@ -10,3 +10,4 @@ test-results
 !.env.template
 
 /playwright-report/
+/.local-runtime/

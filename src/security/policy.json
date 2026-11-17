@@ -643,6 +643,11 @@
     },
     {
       "method": "GET",
+      "path": "/api/public/unassigned_company_purchases",
+      "access": "authenticated"
+    },
+    {
+      "method": "GET",
       "path": "/api/public/all_items",
       "access": [
         "inventory.read",

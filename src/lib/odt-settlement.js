@@ -45,10 +45,10 @@ export function calculateSettlement(source, input) {
     };
     function records(list, key, allowed, label) {
         const map = new Map();
-        if (!Array.isArray(list)) { fail('Revisa ' + label + '.'); return map; }
+        if (!Array.isArray(list)) { fail('Revisa ' + label + '.',key==='expense_key'?{kind:'expense_valuation'}:{}); return map; }
         for (const item of list) {
             const id = key === 'expense_key' ? item && item[key] : Number(item && item[key]);
-            if (!item || !allowed.has(id) || map.has(id)) { fail('Hay datos repetidos o desconocidos en ' + label + '.'); continue; }
+            if (!item || !allowed.has(id) || map.has(id)) { fail('Hay datos repetidos o desconocidos en ' + label + '.',key==='expense_key'?{kind:'expense_valuation'}:{}); continue; }
             map.set(id,item);
         }
         return map;

@@ -1,10 +1,20 @@
 # Taionca
 
+## This PC
+
+Node.js 14 and npm are available on the Windows user PATH. Fully reopen PowerShell or Windows Terminal after the PATH update (restart VS Code if using its integrated terminal). From this folder, `npm run dev:local` starts both the local PostgreSQL cluster and the isolated preview website. The original `npm run dev` remains unchanged: it starts only Sapper and uses the database configured in `.env`.
+
+Run `powershell -ExecutionPolicy Bypass -File .\start-local.ps1` from this folder. The launcher uses the installed local Node.js 14 and PostgreSQL runtimes, starts the app on loopback, and prints its URL. If port 3000 is occupied, it selects another available local port; `-Port 3001` sets the starting port.
+
+The first launch copies `taionca_migrador_20261013_tool` into the separate `taionca_local_preview` database. Later launches preserve that preview and any edits made there. Neither the source migration database nor the original `.env` is changed. The migration itself remains partial; this preview is a copy of its current data, not the production website.
+
+Local server status and logs are in `.local-runtime/preview-server.json` and the corresponding `web-PORT` logs. No schema migration or dependency upgrade is performed automatically by this launcher.
+
 ## Quick setup
 
 *This assumes you already have a PostgreSQL server running, with an empty database created*
 
-1. Install **git** and **node v12**
+1. Install **git** and **node v14** (matching `package.json`; the local launcher uses its bundled runtime)
 2. Clone this repository
 3. Open terminal in repo's folder
 4. Run `npm install`

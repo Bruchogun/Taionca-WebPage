@@ -11,7 +11,7 @@ import logs from './middlewares/logs';
 import validateBusinessInput from './middlewares/validateBusinessInput';
 
 
-const { PORT, NODE_ENV } = process.env;
+const { PORT, HOST, NODE_ENV } = process.env;
 const dev = NODE_ENV === 'development';
 
 // @ts-ignore
@@ -36,6 +36,6 @@ export default polka() // You can also use Express
 			session: (req) => ({user: req.session.user})
 		})
 	)
-	.listen(PORT, err => {
+	.listen(PORT, HOST || undefined, err => {
 		if (err) console.log('error', err);
 	});

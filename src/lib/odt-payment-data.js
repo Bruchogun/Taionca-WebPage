@@ -1,9 +1,16 @@
+import { internalOdtRelations } from './internal-odt-relations';
+
 // Server-only: one statement gives a consistent snapshot of totals and their payment history.
 export async function paymentSummary(client, id, userId) {
-    const { rows } = await client.query(`SELECT o.id_odt,o.amount,o.id_currency,upper(c.code) AS currency_code,c.symbol,
+    // Row JSON also supports the local app while the optional-column migration is pending.
+    const { rows } = await client.query(`SELECT o.id_odt,
+        coalesce((to_jsonb(o)->>'settlement_amount')::numeric,o.amount)::numeric(30,10) AS amount,
+        o.amount AS original_contract_amount,
+        (to_jsonb(o)->>'settlement_amount')::numeric(30,10) AS settlement_amount,
+        o.id_currency,upper(c.code) AS currency_code,c.symbol,
         EXISTS(SELECT 1 FROM closure_odts WHERE id_odt=o.id_odt) AS closed,
         coalesce(p.paid_amount,0)::numeric(30,10) AS paid_amount,
-        (o.amount-coalesce(p.paid_amount,0))::numeric(30,10) AS remaining_amount,
+        (coalesce((to_jsonb(o)->>'settlement_amount')::numeric,o.amount)-coalesce(p.paid_amount,0))::numeric(30,10) AS remaining_amount,
         coalesce(p.payments,'[]'::jsonb) AS payments,
         coalesce((SELECT jsonb_agg(jsonb_build_object('account_name',a.name,'currency_code',upper(m.code),
             'entity_name',e.name,'amount',d.amount::text) ORDER BY d.id_account,d.id_entity)
@@ -25,6 +32,7 @@ export async function paymentSummary(client, id, userId) {
         error.code = 'P0002';
         throw error;
     }
+    rows[0].internal_billings = await internalOdtRelations(client, id);
     return rows[0];
 }
 
