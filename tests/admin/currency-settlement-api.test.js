@@ -2,8 +2,9 @@ const {test,expect}=require('@playwright/test');
 const {query,login,closure,ledger}=require('../helpers/app');
 const {setupPayments,pay,totals,settle}=require('../helpers/payments');
 const {manualPayment,scenario,expense,planFor,closePlan,parts}=require('../helpers/settlement');
-const {allocateRecipients}=require('esm')(module)('../../src/lib/odt-settlement');
-const {units,money}=require('esm')(module)('../../src/lib/money');
+const {loadSource}=require('../helpers/source');
+const {allocateRecipients}=loadSource('lib/odt-settlement');
+const {units,money}=loadSource('lib/money');
 test.beforeEach(async({request})=>{await login(request);});
 
 test('manual equivalent is preserved exactly without deriving an exchange rate',async({request})=>{

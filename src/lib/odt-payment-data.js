@@ -32,7 +32,7 @@ export async function paymentSummary(client, id, userId) {
         error.code = 'P0002';
         throw error;
     }
-    rows[0].internal_billings = await internalOdtRelations(client, id);
+    rows[0].internal_billings = await internalOdtRelations(client, id, userId);
     return rows[0];
 }
 

@@ -27,12 +27,16 @@ test('browser receives progressive USD/COP payments, displays balances and close
     await page.getByLabel('Referencia o descripción del abono').fill('Transferencia de Colombia');
     await submitPayment(page);
     await expect(page.getByTestId('payment-summary')).toContainText('Pendiente: 125.00 USD');
-    await expect(page.getByRole('region',{name:'Historial de abonos'})).toContainText('1,500,000 COP');
+    await expect(page.getByRole('region',{name:'Historial de abonos'})).toContainText('1,500,000.00 COP');
     await expect(page.getByRole('region',{name:'Historial de abonos'})).toContainText('Importe indicado manualmente');
-    await page.getByRole('link',{name:'Revisar y cerrar esta ODT'}).click();
+    const reviewClosure = page.getByRole('link',{name:'Revisar y cerrar esta ODT'});
+    await expect(reviewClosure).toHaveClass(/\bbx--btn--tertiary\b/);
+    await reviewClosure.click();
     await expect(page.getByTestId('closure-payment-summary')).toContainText('Pendiente: 125.00 USD');
     await expect(page.getByRole('button',{name:'Cerrar ODT',exact:true})).toBeDisabled();
-    await page.getByRole('link',{name:'Registrar abonos en una o varias cuentas'}).click();
+    const returnToPayments = page.getByRole('link',{name:'Registrar abonos en una o varias cuentas'});
+    await expect(returnToPayments).toHaveClass(/\bbx--btn--tertiary\b/);
+    await returnToPayments.click();
     await expect(page.getByTestId('payment-summary')).toContainText('875.00 USD');
     await fillPayment(page,accounts[0],'125');await submitPayment(page);
     await expect(page.getByRole('status').filter({hasText:'completamente pagada'})).toBeVisible();
@@ -114,8 +118,10 @@ test('open ODT review shows received payments separately from expenses', async (
     const {odt,accounts}=await setupPayments();await pay(page.request,payment(odt,accounts[2],'1500000','4000'));
     await page.goto('/odts_review');await page.getByPlaceholder('Odts abiertas...').fill(String(odt.id_odt));
     await page.locator('.listContainer .item').filter({hasText:new RegExp('^'+odt.id_odt+' \\|')}).click();
-    await expect(page.getByRole('region',{name:'Historial de abonos'})).toContainText('375 USD');
-    await expect(page.getByRole('link',{name:'Registrar abonos de esta ODT'})).toHaveAttribute('href','/abonos_odt?odt='+odt.id_odt);
+    await expect(page.getByRole('region',{name:'Historial de abonos'})).toContainText('375.00 USD');
+    const registerPayments = page.getByRole('link',{name:'Registrar abonos de esta ODT'});
+    await expect(registerPayments).toHaveClass(/\bbx--btn--tertiary\b/);
+    await expect(registerPayments).toHaveAttribute('href','/abonos_odt?odt='+odt.id_odt);
     await expect(page.getByText('Gastos de la ODT',{exact:true})).toHaveCount(0);
 });
 

@@ -1,38 +1,24 @@
-require('dotenv').config();
 const assert = require('assert');
 const crypto = require('crypto');
-const fs = require('fs');
 const path = require('path');
-const { createRequire } = require('module');
 const { Client } = require('pg');
 const migrate = require('node-pg-migrate').default;
+const { loadSource } = require('../helpers/source');
 const repo = path.resolve(__dirname, '../..');
-const localRequire = createRequire(path.join(repo, 'package.json'));
-const babel = localRequire('@babel/core');
-const plugin = localRequire.resolve('@babel/plugin-transform-modules-commonjs');
-const modules = new Map();
-function load(file) {
-    file = path.resolve(file);
-    assert(file.startsWith(path.join(repo, 'src', 'lib') + path.sep));
-    if (modules.has(file)) return modules.get(file).exports;
-    const module = { exports: {} }; modules.set(file, module);
-    const code = babel.transformSync(fs.readFileSync(file, 'utf8'), {
-        babelrc: false, configFile: false, plugins: [plugin], filename: file, targets: { node: '14' }
-    }).code;
-    new Function('require', 'module', 'exports', code)(
-        name => name.startsWith('.') ? load(path.resolve(path.dirname(file), name + '.js')) : localRequire(name), module, module.exports);
-    return module.exports;
-}
-const { prepareProfitWithdrawal, registerProfitWithdrawal } = load(path.join(repo, 'src/lib/profit-withdrawals.js'));
-const { settlementSource, settleOdt } = load(path.join(repo, 'src/lib/odt-settlement-data.js'));
-const { initialSettlement } = load(path.join(repo, 'src/lib/odt-settlement.js'));
+const { prepareProfitWithdrawal, registerProfitWithdrawal } = loadSource('lib/profit-withdrawals');
+const { settlementSource, settleOdt } = loadSource('lib/odt-settlement-data');
+const { initialSettlement } = loadSource('lib/odt-settlement');
 const schemaMigration = require('../../migrations/1791687000000_profit-withdrawals.js');
 const categoryMigration = require('../../migrations/1791686000000_profit-withdrawals-category.js');
+const supplementMigration = require('../../migrations/1791690002000_historical-profit-supplement-credits.js');
 const fixtureName = 'taionca_test_profit_withdrawals_' + Date.now() + '_' + crypto.randomBytes(4).toString('hex');
-const base = process.env.TEST_ADMIN_DATABASE_URL || process.env.DATABASE_URL;
+const base = process.env.TEST_ADMIN_DATABASE_URL;
+assert(base, 'Set TEST_ADMIN_DATABASE_URL to a disposable local PostgreSQL cluster.');
 const adminUrl = new URL(base); adminUrl.pathname = '/postgres';
 const fixtureUrl = new URL(base); fixtureUrl.pathname = '/' + fixtureName;
-assert(['localhost', '127.0.0.1', '[::1]', '::1'].includes(fixtureUrl.hostname), 'Only a local isolated database is permitted');
+assert(['postgres:', 'postgresql:'].includes(fixtureUrl.protocol) &&
+    ['localhost', '127.0.0.1', '[::1]'].includes(fixtureUrl.hostname) &&
+    !fixtureUrl.search && !fixtureUrl.hash, 'Only a local isolated database is permitted');
 assert(/^taionca_test_profit_withdrawals_\d+_[0-9a-f]{8}$/.test(fixtureName));
 const admin = new Client({ connectionString: adminUrl.toString() });
 const client = new Client({ connectionString: fixtureUrl.toString() });
@@ -89,7 +75,7 @@ async function topup(accountId, user, amount) {
     await client.query("SELECT alter_balance(id_balance,$3,$4,'incomes') FROM balances WHERE id_account=$1 AND id_entity=$2",
         [accountId, user.id_entity, amount, income.id_income]);
 }
-async function earn(accountId, includeSecond = true, commit = true) {
+async function earn(accountId, includeSecond = true, commit = true, primaryRecipient = recipient) {
     await client.query('BEGIN');
     try {
         const odt = (await rows(`INSERT INTO odts(id_client,id_user,id_currency,id_entity,amount,description,admin_percent)
@@ -99,7 +85,7 @@ async function earn(accountId, includeSecond = true, commit = true) {
         const input = initialSettlement(source, 'single', usd);
         input.id_account = accountId;
         input.parts[0].ceo_percent = '0';
-        input.parts[0].operative_users = [{ id_user: recipient.user_id, profit_percent: '0.5' }];
+        input.parts[0].operative_users = [{ id_user: primaryRecipient.user_id, profit_percent: '0.5' }];
         if (includeSecond) input.parts[0].operative_users.push({ id_user: secondRecipient.user_id, profit_percent: '0.25' });
         const closure = await settleOdt(client, input, actor);
         if (commit) await client.query('COMMIT');
@@ -133,9 +119,9 @@ async function earnLegacy(accountId, presidentId) {
         await client.query('COMMIT');
     } catch (error) { await client.query('ROLLBACK'); throw error; }
 }
-async function schema(direction) {
+async function schema(direction, migration = schemaMigration) {
     const statements = [];
-    schemaMigration[direction]({ sql(value) { statements.push(value); } });
+    migration[direction]({ sql(value) { statements.push(value); } });
     await client.query('BEGIN');
     try { for (const statement of statements) await client.query(statement); await client.query('COMMIT'); }
     catch (error) { await client.query('ROLLBACK'); throw error; }
@@ -154,7 +140,8 @@ async function schema(direction) {
     const migrations = await migrate({ databaseUrl: fixtureUrl.toString(), dir: path.join(repo, 'migrations'), direction: 'up', singleTransaction: true,
         migrationsTable: 'pgmigrations', log() {}, logger: { info() {}, warn() {}, error() {} } });
     check(migrations.some(item => item.name === '1791687000000_profit-withdrawals'), 'Schema migration applied after committed enum');
-    await schema('down'); await schema('up'); checks++;
+    await schema('down', supplementMigration); await schema('down');
+    await schema('up'); await schema('up', supplementMigration); checks++;
     actor = (await rows("SELECT user_id FROM users WHERE username='master' AND special_user IS TRUE"))[0].user_id;
     usd = (await rows("SELECT id_currency FROM currencys WHERE upper(code)='USD' ORDER BY id_currency LIMIT 1"))[0].id_currency;
     [recipient, secondRecipient] = await rows('SELECT user_id,id_entity FROM users WHERE id_entity>3 AND special_user IS FALSE ORDER BY user_id LIMIT 2');
@@ -322,6 +309,48 @@ async function schema(direction) {
     const replays = await Promise.all(peers.map(peer => registerProfitWithdrawal(peer, replayRequest)));
     equal(replays[0], replays[1], 'Simultaneous identical UUID returns one immutable result');
     equal(await cash(concurrentReplay), '35.0000000000', 'Concurrent replay debits once');
+
+    const supplementAccount = await account('Historical supplement fixture');
+    let [payee] = await rows('SELECT user_id,id_entity FROM users WHERE user_id=5');
+    if (!payee) [payee] = await rows(`WITH wallet AS (INSERT INTO entitys(name) VALUES('Supplement fixture user') RETURNING id_entity)
+        INSERT INTO users(user_id,username,password_hash,name,lastname,email,id_entity)
+        SELECT 5,'supplement-fixture','unused','Fixture','Supplement','supplement-fixture@example.invalid',id_entity FROM wallet
+        RETURNING user_id,id_entity`);
+    const supplementClosure = await earn(supplementAccount, false, true, payee.user_id === recipient.user_id ? secondRecipient : recipient);
+    const supplementRequest = amountEvent(supplementAccount, '7', [{ userId: payee.user_id, entityId: payee.id_entity, amount: '7' }]);
+    await client.query('BEGIN');
+    const [transfer] = await rows("INSERT INTO transfer_entitys(description) VALUES('Historical supplement fixture') RETURNING id_transfer_entity");
+    await client.query('INSERT INTO balances(id_account,id_entity) VALUES($1,$2) ON CONFLICT(id_account,id_entity) DO NOTHING', [supplementAccount,payee.id_entity]);
+    const transferLeg = async (entity, amount) => (await rows(`SELECT (alter_balance(id_balance,$3,$4,'transfer_entities')).id_balance_movement
+        FROM balances WHERE id_account=$1 AND id_entity=$2`, [supplementAccount,entity,amount,transfer.id_transfer_entity]))[0].id_balance_movement;
+    const debit = await transferLeg(1, '-10'), credit = await transferLeg(payee.id_entity, '10');
+    const supplementSql = `INSERT INTO profit_supplement_credits(id_odt,id_closure_odt,role,id_user,id_entity,id_account,id_currency,
+        id_transfer_entity,id_credit_movement,id_debit_movement,amount,source_key,evidence_hash)
+        VALUES($1,$2,'operative',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING commission_percent`;
+    const supplementArgs = [supplementClosure.id_odt,supplementClosure.id_closure_odt,payee.user_id,payee.id_entity,supplementAccount,usd,
+        transfer.id_transfer_entity,credit,debit,'10','historical:fixture',hash({ credit })];
+    await client.query('SAVEPOINT wrong_amount');
+    await rejects(() => rows(supplementSql, supplementArgs.map((value, index) => index === 9 ? '9' : value)), /dos movimientos exactos/);
+    await client.query('ROLLBACK TO SAVEPOINT wrong_amount');
+    equal((await rows(supplementSql, supplementArgs))[0].commission_percent, '0.10000', 'Supplement records its historical role rate');
+    await client.query('SAVEPOINT immature_supplement');
+    await rejects(() => registerProfitWithdrawal(client, supplementRequest), /comprometida/);
+    await client.query('ROLLBACK TO SAVEPOINT immature_supplement');
+    await client.query('COMMIT');
+    const historical = await registerProfitWithdrawal(client, supplementRequest);
+    equal(historical.creditJournalIds, [credit], 'Committed supplement produces the exact native withdrawal proof link');
+    equal(historical.parts[0].earnedAfter, '3.0000000000', 'A withdrawal spends only its exact amount of historical rights');
+    equal(await cash(supplementAccount, payee.id_entity), '3.0000000000', 'Supplement withdrawal debits real recipient cash');
+    await rejects(() => rows(supplementSql, supplementArgs), /duplicate key/);
+    await rejects(() => transferLeg(payee.id_entity, '1'), /inmutable/);
+    await rejects(() => rows('UPDATE balance_movements SET amount=amount+1 WHERE id_balance_movement=$1', [debit]), /inmutable/);
+    await rejects(() => rows('UPDATE transfer_entitys SET description=$1 WHERE id_transfer_entity=$2', ['altered',transfer.id_transfer_entity]), /inmutable/);
+    await rejects(() => rows('DELETE FROM profit_supplement_credits WHERE id_credit_movement=$1', [credit]), /inmutable/);
+    await topup(supplementAccount, payee, '100');
+    await rejects(() => registerProfitWithdrawal(client, amountEvent(supplementAccount, '4', [
+        { userId: payee.user_id, entityId: payee.id_entity, amount: '4' }
+    ])), /devengadas/);
+    await rejects(() => schema('down', supplementMigration), /historial de complementos/);
     await rejects(() => schema('down'), /historial contabilizado/);
     equal((await rows("SELECT count(*)::int AS n FROM pg_namespace WHERE nspname IN ('ledger_import','taionca_import')"))[0].n, 0, 'Fixture does not read or create OLD/NEW audit schemas');
     console.log(JSON.stringify({ status: 'passed', checks, fixture: fixtureName, migrations: migrations.length, realDatabaseWrites: 0 }));

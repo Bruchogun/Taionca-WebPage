@@ -1,6 +1,7 @@
 const { test, expect } = require('@playwright/test');
 const { query, login, createOdt, payload, closure } = require('../helpers/app');
-const { exchangeRate, quotationTotals } = require('esm')(module)('../../src/lib/currency');
+const { loadSource } = require('../helpers/source');
+const { exchangeRate, quotationTotals } = loadSource('lib/currency');
 let serial=0;
 async function account(request, currency=1) {
     const name='Regresión monetaria '+Date.now()+' '+(++serial);

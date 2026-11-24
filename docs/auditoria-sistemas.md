@@ -52,7 +52,7 @@ En el equipo con Node, PostgreSQL y Edge configurados:
 npm run test:all
 ```
 
-El ejecutor crea una base temporal `taionca_test_odt_*`, aplica las migraciones, comprueba la reversión/reaplicación, instala datos ficticios, compila y ejecuta Playwright contra un servidor dedicado. Al terminar elimina esa base y restaura las constantes locales. Los datos de prueba no se insertan en la base de uso habitual.
+El ejecutor compila la aplicación, comprueba la actualización del esquema con datos históricos ficticios y ejecuta Playwright contra un servidor dedicado. Las bases temporales se crean en un clúster de pruebas y se eliminan al terminar. El comando arranca por defecto un clúster descartable. Consulta la [configuración de pruebas](../README.md#pruebas).
 
 El resultado detallado queda en `playwright-report/index.html` y `test-results/results.json`. Los fallos conservan captura y traza para diagnóstico. Puede ejecutarse una selección con `npm test -- tests/security` o con la ruta de otro archivo de pruebas.
 

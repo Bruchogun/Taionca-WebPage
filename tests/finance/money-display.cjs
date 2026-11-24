@@ -1,0 +1,24 @@
+const assert = require('assert').strict;
+const { loadSource } = require('../helpers/source');
+const { compareMoney, displayMoney } = loadSource('lib/money');
+
+assert.equal(displayMoney('30.0000000000', 'USD'), '30.00');
+assert.equal(displayMoney(0, 'COP'), '0.00');
+assert.equal(displayMoney('10000000', 'COP'), '10,000,000.00');
+assert.equal(displayMoney('12345.995', 'EUR'), '12,346.00');
+assert.equal(displayMoney('-12.345', 'VES'), '-12.35');
+assert.equal(displayMoney('-0.00001', 'USD'), '0.00');
+assert.equal(displayMoney('0.0000100000', 'btc'), '0.00001');
+assert.equal(displayMoney('15', '₿'), '15.00000');
+assert.equal(displayMoney('0', 'Bitcoin'), '0.00000');
+assert.equal(displayMoney('0.123455', 'BTC'), '0.12346');
+assert.equal(displayMoney(1e-7, 'BTC'), '0.00000');
+assert.equal(displayMoney(-1e-7, 'BTC'), '0.00000');
+assert.equal(displayMoney('99999999999999999999.994', 'USD'), '99,999,999,999,999,999,999.99');
+assert.equal(displayMoney(null, 'USD'), 'Pendiente');
+assert.ok(compareMoney('1234.0000000000', '999.0000000000') > 0);
+assert.ok(compareMoney('-12.01', '-12') < 0);
+assert.ok(compareMoney('99999999999999999999.0000000002', '99999999999999999999.0000000001') > 0);
+assert.ok(compareMoney(1e-9, '0.00001') < 0);
+assert.equal(compareMoney('12', '12.0000'), 0);
+console.log('Money display uses two decimal places, with five for BTC.');

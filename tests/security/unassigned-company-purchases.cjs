@@ -48,7 +48,18 @@ const users=[
  }
  for(const [hasLegacy,hasMigrador] of[[false,false],[true,false],[false,true],[true,true]])for(const user of[undefined,{user_id:'100',capabilities:[]},{user_id:0,capabilities:[]}]){const result=await scenario(user,hasLegacy,hasMigrador);assert.strictEqual(result.status,401);assert.strictEqual(result.calls.length,0);assert(result.body.error);scenarios++;}
  assert.strictEqual(accessExports.apiAccess('GET','/api/public/unassigned_company_purchases'),'authenticated');for(const method of['POST','PUT','PATCH','DELETE'])assert.strictEqual(accessExports.apiAccess(method,'/api/public/unassigned_company_purchases'),undefined);
- const component=fs.readFileSync(path.join(repo,'src/components/Loans.svelte'),'utf8');svelte.compile(component,{generate:'ssr',filename:'Loans.svelte'});assert(component.includes("apiFetch('/api/public/unassigned_company_purchases')"));assert(component.includes("owner_user_id===user.value"));assert(component.includes("merchant_payment:'Pagado por propietario'"));assert(component.includes("value:'Pago al comercio'"));assert(component.includes('Compras de Taionca pendientes de ODT'));assert(component.includes('purchase-history')&&component.includes('overflow-x:auto'));assert(component.includes('display:displayMoney')&&component.includes('units(a)<units(b)'));assert(!component.includes('method:'));assert(!component.includes('id_company_debt_movement')||component.includes('company_debt_registers'));
+ const component=fs.readFileSync(path.join(repo,'src/components/Loans.svelte'),'utf8');
+ svelte.compile(component,{generate:'ssr',filename:'Loans.svelte'});
+ assert.match(component,/fetch\('\/api\/public\/unassigned_company_purchases'\)/);
+ assert.match(component,/owner_user_id\s*===\s*userId/);
+ assert.match(component,/merchant_payment:\s*'Pagado por propietario'/);
+ assert.match(component,/value:\s*'Pago al comercio'/);
+ assert(component.includes('Compras de Taionca pendientes de ODT'));
+ assert(component.includes('purchase-history')&&/overflow-x:\s*auto/.test(component));
+ assert.match(component,/amount:\s*\{\s*value:\s*purchase\.amount,\s*currency:\s*purchase\.currency_code\s*\}/);
+ assert.match(component,/\{\s*\.\.\.amountColumn,\s*value:\s*'Importe'\s*\}/);
+ assert(!component.includes('method:'));
+ assert(!component.includes('id_company_debt_movement')||component.includes('company_debt_registers'));
  let databaseSmoke=[];
  if(process.argv.includes('--database-smoke')){
   require('dotenv').config({path:path.join(repo,'.env')});const {Client}=require('pg');

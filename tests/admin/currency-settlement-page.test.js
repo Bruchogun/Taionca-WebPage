@@ -17,11 +17,11 @@ test('three mini closures are shown with native income, their own expenses and s
     const errors=[];page.on('pageerror',e=>errors.push(e.message));
     const {odt,accounts}=await scenario(page.request);await expense(odt,accounts[0],'1000');await expense(odt,accounts[1],'1000000');await expense(odt,accounts[2],'1020080');
     await openClose(page,odt);
-    await expect(page.getByTestId('part-summary-1')).toContainText('Ingresos: 5,000 USD');
-    await expect(page.getByTestId('part-summary-3')).toContainText('Gastos generales: 1,000,000 COP');
-    await expect(page.getByTestId('part-summary-2')).toContainText('Ingresos: 10,200,800 VES');
+    await expect(page.getByTestId('part-summary-1')).toContainText('Ingresos: 5,000.00 USD');
+    await expect(page.getByTestId('part-summary-3')).toContainText('Gastos generales: 1,000,000.00 COP');
+    await expect(page.getByTestId('part-summary-2')).toContainText('Ingresos: 10,200,800.00 VES');
     await page.getByLabel('Presidente en COP (%)').fill('20');
-    await expect(page.getByTestId('part-summary-3')).toContainText('Administración y comisiones a repartir: 3,400,000 COP');
+    await expect(page.getByTestId('part-summary-3')).toContainText('Administración y comisiones a repartir: 3,400,000.00 COP');
     const before=await totals(accounts);
     await page.getByRole('button',{name:'Cerrar ODT',exact:true}).click();
     await expect(page.getByRole('status').filter({hasText:'cerrada con sus abonos'})).toBeVisible();
@@ -29,8 +29,8 @@ test('three mini closures are shown with native income, their own expenses and s
     await page.goto('/odts_review');await page.getByText('ODTs cerradas',{exact:true}).click();
     await page.getByPlaceholder('Odts cerradas...').fill(String(odt.id_odt));await page.locator('.listContainer .item').filter({hasText:new RegExp('^'+odt.id_odt+' \\|')}).click();
     const history=page.getByRole('region',{name:'Resultados del cierre por moneda'});
-    await expect(history).toContainText('USD · Ingresos: 5,000');await expect(history).toContainText('COP · Ingresos: 10,000,000');
-    await expect(history).toContainText('VES · Ingresos: 10,200,800');
+    await expect(history).toContainText('USD · Ingresos: 5,000.00');await expect(history).toContainText('COP · Ingresos: 10,000,000.00');
+    await expect(history).toContainText('VES · Ingresos: 10,200,800.00');
     expect(errors).toEqual([]);
 });
 
@@ -45,8 +45,8 @@ test('negative currency automatically opens expense assignment and requires an e
     await expect(row.getByLabel(new RegExp('Importe del gasto '+key))).toHaveValue('');
     await expect(page.getByRole('button',{name:'Cerrar ODT',exact:true})).toBeDisabled();
     await row.getByLabel(new RegExp('Importe del gasto '+key)).fill('25');
-    await expect(page.getByTestId('part-summary-1')).toContainText('Utilidad para comisiones: 695 USD');
-    await expect(page.getByTestId('part-summary-3')).toContainText('Utilidad para comisiones: 80 COP');
+    await expect(page.getByTestId('part-summary-1')).toContainText('Utilidad para comisiones: 695.00 USD');
+    await expect(page.getByTestId('part-summary-3')).toContainText('Utilidad para comisiones: 80.00 COP');
     await page.getByRole('button',{name:'Cerrar ODT',exact:true}).click();
     await expect(page.getByRole('status').filter({hasText:'cerrada con sus abonos'})).toBeVisible();
 });
@@ -57,14 +57,14 @@ test('single original currency records manually entered bank debit and credit am
     await openClose(page,odt);
     await page.getByLabel('Forma de cierre').selectOption('original');
     await page.getByLabel('Cuenta para pagar el reparto').selectOption(String(destination.id_account));
-    await expect(page.getByTestId('part-summary-1')).toContainText('Ingresos: 10,000 USD');
+    await expect(page.getByTestId('part-summary-1')).toContainText('Ingresos: 10,000.00 USD');
     await page.getByText('Cambios de moneda para disponer de saldo en la cuenta de reparto',{exact:true}).click();
     await page.getByRole('button',{name:'Agregar cambio manual'}).click();
     await page.getByLabel('Origen del cambio 1').selectOption(String(accounts[1].id_account));
     await page.getByLabel('Monto que sale en el cambio 1').fill('9000000');
     await page.getByLabel('Monto que llega en USD en el cambio 1').fill('2800');
     await expect(page.getByRole('button',{name:'Cerrar ODT',exact:true})).toBeDisabled();
-    await expect(page.getByText(/Se descontarán 9,000,000/)).toContainText('2,800 USD');
+    await expect(page.getByText(/Se descontarán 9,000,000/)).toContainText('2,800.00 USD');
     await page.getByRole('checkbox',{name:/Confirmo los cambios/}).check();
     await page.getByRole('button',{name:'Cerrar ODT',exact:true}).click();
     await expect(page.getByRole('status').filter({hasText:'cerrada con sus abonos'})).toContainText(destination.name);
@@ -78,13 +78,13 @@ test('another received currency requires manual values and changing modes resets
     await openClose(page,odt);await page.getByLabel('Forma de cierre').selectOption('received');await page.getByLabel('Moneda del reparto').selectOption('3');
     await page.getByLabel('Cuenta para pagar el reparto').selectOption(String(accounts[1].id_account));
     await expect(page.getByRole('button',{name:'Cerrar ODT',exact:true})).toBeDisabled();
-    await page.getByLabel('¿Cuánto representan 5,000 USD en COP?').fill('17500000');
-    await page.getByLabel('¿Cuánto representan 10,200,800 VES en COP?').fill('14000000');
-    await expect(page.getByTestId('part-summary-3')).toContainText('Ingresos: 41,500,000 COP');
+    await page.getByLabel('¿Cuánto representan 5,000.00 USD en COP?').fill('17500000');
+    await page.getByLabel('¿Cuánto representan 10,200,800.00 VES en COP?').fill('14000000');
+    await expect(page.getByTestId('part-summary-3')).toContainText('Ingresos: 41,500,000.00 COP');
     await page.getByLabel('Forma de cierre').selectOption('split');
-    await expect(page.getByTestId('part-summary-3')).toContainText('Ingresos: 10,000,000 COP');
+    await expect(page.getByTestId('part-summary-3')).toContainText('Ingresos: 10,000,000.00 COP');
     await page.getByLabel('Forma de cierre').selectOption('received');
-    await expect(page.getByLabel('¿Cuánto representan 5,000 USD en COP?')).toHaveValue('');
+    await expect(page.getByLabel('¿Cuánto representan 5,000.00 USD en COP?')).toHaveValue('');
 });
 
 test('stale preview preserves inputs and prompts refreshing before another close attempt',async({page})=>{
@@ -95,7 +95,7 @@ test('stale preview preserves inputs and prompts refreshing before another close
     await expect(page.getByRole('button',{name:'Cerrar ODT',exact:true})).toBeDisabled();
     expect(await closure(odt.id_odt)).toBeUndefined();
     await page.getByRole('button',{name:'Recargar cierre'}).click();
-    await expect(page.getByTestId('part-summary-1')).toContainText('Gastos generales: 150 USD');
+    await expect(page.getByTestId('part-summary-1')).toContainText('Gastos generales: 150.00 USD');
     await page.getByRole('button',{name:'Cerrar ODT',exact:true}).click();
     await expect(page.getByRole('status').filter({hasText:'cerrada con sus abonos'})).toBeVisible();
 });

@@ -12,3 +12,11 @@ npm-debug.log*
 .vscode
 .env*
 tests/
+test-results/
+playwright-report/
+.local-runtime/
+src/node_modules/
+scripts/import-ledger-*.cjs
+scripts/stage-google-ledger.cjs
+scripts/split-ledger-machinery.cjs
+scripts/lib/clarified-expense-prerequisites.cjs

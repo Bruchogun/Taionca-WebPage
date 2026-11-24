@@ -1,5 +1,4 @@
 import { compose } from "compose-middleware";
-import { USERS_READ } from "../../../constants/PERMISSIONS";
 import checkPermissionsMW from "../../../middlewares/checkPermissionsMW";
 
 export const post =

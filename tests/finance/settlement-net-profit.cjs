@@ -1,6 +1,6 @@
 const assert=require('assert'),fs=require('fs'),path=require('path');
-const load=require('esm')(module),{netCompanyProfit}=load('../../src/lib/settlement-net-profit.js');
-const {displayMoney}=load('../../src/lib/money.js');
+const {loadSource}=require('../helpers/source'),{netCompanyProfit}=loadSource('lib/settlement-net-profit');
+const {displayMoney}=loadSource('lib/money');
 const part={id_part:10,code:'USD',gross_profit:'1049.9',commissions:[{profit:'524.95'},{profit:'104.99'},...Array.from({length:4},()=>({profit:'52.495'}))]};
 assert.strictEqual(netCompanyProfit(part),'209.9800000000');
 const other={id_part:11,code:'VES',gross_profit:'100',commissions:[{profit:'20'},{profit:'10'}]};

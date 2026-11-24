@@ -32,6 +32,17 @@ test('credenciales incorrectas no revelan existencia y los intentos repetidos se
  const limited=await request.post('/api/public/login',{data:{username:'security-worker',password:'wrong'}});expect(limited.status()).toBe(429);expect(limited.headers()['retry-after']).toBe('900');
  expect((await request.get('/api/user')).status()).toBe(401);
 });
+test('origen bloqueado no crea contadores por cuenta y su ventana se puede recuperar',async({request})=>{
+ await login(request);
+ expect((await query("SELECT attempts FROM login_attempts WHERE key LIKE 'origin:%'")).map(row=>row.attempts)).toEqual([0]);
+ await query("UPDATE login_attempts SET attempts=120 WHERE key LIKE 'origin:%'");
+ const blocked=await request.post('/api/public/login',{data:{username:'absent-rate-limit-test',password:'wrong'}});
+ expect(blocked.status()).toBe(429);
+ expect(await query("SELECT key FROM login_attempts WHERE key NOT LIKE 'origin:%'")).toEqual([]);
+ await query("UPDATE login_attempts SET window_start=now()-interval '16 minutes' WHERE key LIKE 'origin:%'");
+ await login(request);
+ expect((await query("SELECT attempts FROM login_attempts WHERE key LIKE 'origin:%'")).map(row=>row.attempts)).toEqual([0]);
+});
 test('rutas API desconocidas se deniegan por defecto',async({request})=>{
  expect((await request.post('/api/not-registered',{data:{}})).status()).toBe(401);await login(request);expect((await request.post('/api/not-registered',{data:{}})).status()).toBe(403);
 });

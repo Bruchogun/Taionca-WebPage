@@ -1,7 +1,7 @@
 import { initialDate } from './lib/responsibility-dates';
+import { displayMoney } from './lib/money';
 import {notifications, loadingIsActive} from "./stores"
 import fetch from "node-fetch";
-import { exchangeRate } from "./lib/currency";
 import { goto } from '@sapper/app'
 
 /**
@@ -16,24 +16,6 @@ export const checkPermissions = (permissions_ids, userPermissions) => {
     return permissions_ids.every(permission_id => {  // All *permissions_ids* must pass validation
         return userPermissions.includes(permission_id);
     })
-}
-
-/**
- * currency_code should not be received from frontend, is a vulnerability
- * se debe hacer previamente un query para obtener la moneda de la ODT
- */
-export async function getRate(counter_currency_code, base_currency_code){
-    counter_currency_code = String(counter_currency_code || '').trim().toUpperCase();
-    base_currency_code = String(base_currency_code || '').trim().toUpperCase();
-    if (!counter_currency_code || !base_currency_code) throw new Error('La moneda es obligatoria.');
-    if (counter_currency_code === base_currency_code) {
-        return 1;
-    }
-    const url = `https://openexchangerates.org/api/latest.json?app_id=5b9fa9d2985e417086b2ebfe191d4e78`;
-    const response = await fetch(url);
-    const rates = await response.json();
-    if (!response.ok || !rates.rates) throw new Error('No se pudieron consultar las tasas de cambio.');
-    return exchangeRate(rates.rates, counter_currency_code, base_currency_code);
 }
 
 /**
@@ -62,9 +44,9 @@ export function next_date(deadline, term, days_to_repeat){
     return initialDate(deadline, term, days_to_repeat);
 }
 
-export function format_number(amount, option){
+export function format_number(amount, option, currency){
     if(option === "currency"){
-        return Number(amount).toFixed(2).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+        return displayMoney(amount, currency);
         
     }else if(option === "percentage"){
         if(0 <= Number(amount) && Number(amount) <= 1){

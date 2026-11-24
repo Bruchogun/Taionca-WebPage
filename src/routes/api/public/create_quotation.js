@@ -1,7 +1,6 @@
 import { compose } from "compose-middleware";
-import { USERS_READ } from "../../../constants/PERMISSIONS";
 import { sql } from "../../../db";
-import { getRate } from "../../../functions";
+import { getRate } from '../../../lib/exchange-rate';
 import { quotationTotals } from "../../../lib/currency";
 import checkPermissionsMW from "../../../middlewares/checkPermissionsMW";
 

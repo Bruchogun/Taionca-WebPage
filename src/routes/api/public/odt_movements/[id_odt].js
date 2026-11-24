@@ -11,6 +11,7 @@ export const get =
             id_balance_movement,
             entitys.name as entity,
             currencys.name_plural as currency,
+            currencys.code as currency_code,
             symbol,
             accounts.name as account,
             balance_movements.amount,

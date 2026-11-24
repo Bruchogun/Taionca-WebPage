@@ -3,26 +3,27 @@
   "description": "taionca administrative software",
   "version": "1.0.0",
   "engines": {
-    "node": "14.x"
+    "node": "24.x"
   },
   "scripts": {
     "dev": "sapper dev",
     "dev:local": "powershell -NoProfile -ExecutionPolicy Bypass -File ./start-local.ps1",
-    "build": "run-s build:db build:sapper",
+    "build": "npm run build:sapper",
     "build:sapper": "sapper build",
-    "build:db": "run-s \"migrate up\" build:permissions.js",
-    "build:permissions.js": "node -r esm ./src/scripts/build_permissions_constants.js",
+    "build:db": "npm run migrate -- up",
+    "build:permissions.js": "node ./src/scripts/build_permissions_constants.js",
     "export": "sapper export",
     "start": "node __sapper__/build",
-    "create:permission": "node -r esm ./src/scripts/create_permission.js",
-    "create:crudPermissions": "node -r esm ./src/scripts/create_crudPermissions.js",
+    "create:permission": "node ./src/scripts/create_permission.js",
+    "create:crudPermissions": "node ./src/scripts/create_crudPermissions.js",
     "migrate": "node-pg-migrate",
     "test": "node scripts/test.js",
-    "test:all": "node scripts/test.js --build"
+    "test:stage": "node scripts/test.js --stage",
+    "test:all": "node scripts/test.js --all"
   },
   "dependencies": {
     "argon2": "^0.27.0",
-    "body-parser": "^1.19.0",
+    "body-parser": "1.20.9",
     "chart.js": "^4.4.2",
     "chartjs-adapter-date-fns": "^3.0.0",
     "chartjs-adapter-dayjs-4": "^1.0.4",
@@ -34,10 +35,9 @@
     "dayjs": "^1.11.11",
     "dotenv": "^16.4.5",
     "express-session": "^1.17.1",
-    "fly": "^4.6.3",
     "luxon": "^3.4.4",
     "morgan": "^1.10.0",
-    "node-fetch": "^2.6.1",
+    "node-fetch": "2.7.0",
     "pg": "^8.4.1",
     "polka": "next",
     "sirv": "^1.0.0"
@@ -58,7 +58,6 @@
     "carbon-components-svelte": "^0.32.1",
     "esm": "^3.2.25",
     "node-pg-migrate": "^5.8.1",
-    "npm-run-all": "^4.1.5",
     "rollup": "^2.3.4",
     "rollup-plugin-svelte": "^6.0.0",
     "rollup-plugin-terser": "^7.0.0",

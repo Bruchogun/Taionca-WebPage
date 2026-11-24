@@ -1,5 +1,4 @@
 <script>
-    import 'carbon-components-svelte/css/white.css';
     import { DataTable, Button, ButtonSet } from "carbon-components-svelte";
 	import { apiFetch } from '../functions';
 	import { onMount } from 'svelte';

@@ -4,14 +4,14 @@
 
 <script>
     import { TextInput, Button } from 'carbon-components-svelte';
-    import 'carbon-components-svelte/css/white.css';
     import Odt_settlement from '../components/Odt_settlement.svelte';
     import Odt_payment_history from '../components/Odt_payment_history.svelte';
     import Accounts from '../components/Accounts.svelte';
     import Odts from '../components/Odts.svelte';
     import Users_profit from '../components/Users_profit.svelte';
     import PercentInput from '../components/PercentInput.svelte';
-    import { apiFetch, format_number } from '../functions';
+    import { apiFetch } from '../functions';
+    import { displayMoney } from '../lib/money';
     import { validateClosure } from '../lib/odt-closure';
 
     export let initialOdt = null;
@@ -32,6 +32,10 @@
     let refresh = 0;
     let selectedOdt = null;
 
+    function amountForInput(value) {
+        return String(value).replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+    }
+
     // Also handles clearing the selector and changing between ODTs in the same currency.
     $: resetForOdt(odt && odt.id_odt);
     function resetForOdt(id) {
@@ -40,7 +44,7 @@
         paymentSummary = null;
         loadPayments(id);
         account = null;
-        amount = odt ? String(odt.amount).replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '') : '';
+        amount = odt ? amountForInput(odt.amount) : '';
         admin_percent = odt ? odt.admin_percent : 0;
         admin_users = [];
         operative_users = [];
@@ -58,20 +62,29 @@
             if (version !== loadVersion) return;
             paymentSummary = result.data;
             if (paymentSummary.payments.length) amount = paymentSummary.paid_amount;
+            else if (paymentSummary.settlement_amount != null) amount = amountForInput(paymentSummary.settlement_amount);
         } catch (err) { if (version === loadVersion) error = err.message; }
         finally { if (version === loadVersion) loadingPayments = false; }
     }
     $: hasPayments = !!(paymentSummary && paymentSummary.payments.length);
+    $: hasFinalAmount = paymentSummary && paymentSummary.settlement_amount != null;
+    $: closesWithoutIncome = !hasPayments && hasFinalAmount && Number(paymentSummary.settlement_amount) === 0;
     $: payload = {
         id_odt: odt && odt.id_odt,
-        id_account: hasPayments ? null : account && account.id_account,
+        id_account: hasPayments || closesWithoutIncome ? null : account && account.id_account,
         settle_payments: hasPayments,
-        amount, admin_percent, ceo_percent,
-        admin_users: admin_users.map(({ id_user, profit_percent }) => ({ id_user, profit_percent })),
-        operative_users: operative_users.map(({ id_user, profit_percent }) => ({ id_user, profit_percent })),
-        supervisor_users: supervisor_users.map(({ id_user, profit_percent }) => ({ id_user, profit_percent }))
+        amount,
+        admin_percent: closesWithoutIncome ? 0 : admin_percent,
+        ceo_percent: closesWithoutIncome ? 0 : ceo_percent,
+        admin_users: closesWithoutIncome ? [] : admin_users.map(({ id_user, profit_percent }) => ({ id_user, profit_percent })),
+        operative_users: closesWithoutIncome ? [] : operative_users.map(({ id_user, profit_percent }) => ({ id_user, profit_percent })),
+        supervisor_users: closesWithoutIncome ? [] : supervisor_users.map(({ id_user, profit_percent }) => ({ id_user, profit_percent }))
     };
-    $: validation = loadingPayments ? 'Consultando abonos…' : odt && !paymentSummary ? 'No se pudieron consultar los abonos. Vuelve a seleccionar la ODT.' : hasPayments && Number(paymentSummary.remaining_amount) !== 0 ? 'La ODT debe estar completamente pagada antes de cerrarla.' : validateClosure(payload);
+    $: validation = loadingPayments ? 'Consultando abonos…'
+        : odt && !paymentSummary ? 'No se pudieron consultar los abonos. Vuelve a seleccionar la ODT.'
+        : hasPayments && Number(paymentSummary.remaining_amount) !== 0 ? 'La ODT debe estar completamente pagada antes de cerrarla.'
+        : odt && amount && Number(amount) === 0 && !closesWithoutIncome ? 'El cierre sin ingreso requiere un importe final acordado de cero.'
+        : validateClosure(payload);
 
     async function closeOdt() {
         if (hasPayments) return;
@@ -108,10 +121,12 @@
 {#if receipt}
     <div class="receipt" role="status">
         {#if receipt.settled_from_payments}
-            ODT {receipt.id_odt} cerrada con sus abonos: {receipt.symbol}{format_number(receipt.amount, 'currency')} ({receipt.currency_code.toUpperCase()}).
+            ODT {receipt.id_odt} cerrada con sus abonos: {receipt.symbol}{displayMoney(receipt.amount, receipt.currency_code || receipt.symbol)} ({receipt.currency_code.toUpperCase()}).
             Cuentas: {receipt.account_name}. El cierre no volvió a ingresar el dinero.
+        {:else if Number(receipt.amount) === 0}
+            ODT {receipt.id_odt} cerrada sin ingreso. El cierre no generó movimientos de saldo.
         {:else}
-            ODT {receipt.id_odt} cerrada. Se registraron {receipt.symbol}{format_number(receipt.amount, 'currency')}
+            ODT {receipt.id_odt} cerrada. Se registraron {receipt.symbol}{displayMoney(receipt.amount, receipt.currency_code || receipt.symbol)}
             en {receipt.account_name} ({receipt.currency_code.toUpperCase()}).
         {/if}
     </div>
@@ -121,15 +136,29 @@
     <fieldset disabled={saving}>
         <legend>Datos del cierre</legend>
         {#key refresh}<Odts bind:odt initial_id={initialOdt} />{/key}
-        {#if odt}<p><a href={'/abonos_odt?odt=' + odt.id_odt}>Registrar abonos en una o varias cuentas</a></p>{/if}
+        {#if odt && !closesWithoutIncome}
+            <p>
+                <Button kind="tertiary" size="small" href={'/abonos_odt?odt=' + odt.id_odt}>
+                    Registrar abonos en una o varias cuentas
+                </Button>
+            </p>
+        {/if}
         {#if hasPayments}
             <div class="destination" data-testid="closure-payment-summary">
-                <p>Abonado: {format_number(paymentSummary.paid_amount, 'currency')} {paymentSummary.currency_code}</p>
-                <p>Pendiente: {format_number(paymentSummary.remaining_amount, 'currency')} {paymentSummary.currency_code}</p>
+                <p>Abonado: {displayMoney(paymentSummary.paid_amount, paymentSummary.currency_code || paymentSummary.symbol)} {paymentSummary.currency_code}</p>
+                <p>Pendiente: {displayMoney(paymentSummary.remaining_amount, paymentSummary.currency_code || paymentSummary.symbol)} {paymentSummary.currency_code}</p>
                 <p>Selecciona cómo calcular y repartir las utilidades. Los abonos ya están registrados y no se ingresarán de nuevo.</p>
             </div>
+        {:else if closesWithoutIncome}
+            <p class="destination">El importe final acordado es cero. Confirma el cierre sin registrar un cobro ni repartir fondos.</p>
         {:else}
-        <TextInput type="number" labelText="Monto pagado" placeholder="Ingrese el monto..." bind:value={amount} min="0" step="any" />
+        {#if hasFinalAmount}
+            <TextInput labelText="Importe final acordado"
+                value={displayMoney(amount, paymentSummary.currency_code || paymentSummary.symbol)} readonly />
+        {:else}
+            <TextInput type="number" labelText="Monto pagado" placeholder="Ingrese el monto..."
+                bind:value={amount} min="0" step="any" />
+        {/if}
         {#if odt}
             {#key odt.id_odt}
                 <Accounts id_currency_filter={odt.id_currency} bind:account label="Cuenta de destino del pago" placeholder="Selecciona la cuenta de destino..." />
@@ -140,17 +169,19 @@
         {#if hasPayments}
             {#key odt.id_odt}<Odt_settlement id_odt={odt.id_odt} bind:saving on:closed={currencyClosed} />{/key}
         {:else}
+        {#if !closesWithoutIncome}
         <div class="percent"><h4>Porcentaje administrativo</h4><PercentInput label="Porcentaje administrativo" bind:value={admin_percent} /></div>
         <Users_profit label="Usuarios administrativos" bind:users_profit={admin_users} />
         <Users_profit label="Usuarios operativos" bind:users_profit={operative_users} />
         <Users_profit label="Usuarios supervisores" bind:users_profit={supervisor_users} />
         <div class="percent"><h4>Presidente</h4><PercentInput label="Porcentaje del presidente" bind:value={ceo_percent} /></div>
         {#if !hasPayments && account && amount}
-            <p class="destination">Destino: <strong>{account.name} ({account.code.toUpperCase()})</strong> · Monto: {account.symbol}{format_number(amount, 'currency')}</p>
+            <p class="destination">Destino: <strong>{account.name} ({account.code.toUpperCase()})</strong> · Monto: {account.symbol}{displayMoney(amount, account.code || account.symbol)}</p>
+        {/if}
         {/if}
         {#if validation}<p class="hint" role="status">{validation}</p>{/if}
         {#if error}<p class="error" role="alert">{error}</p>{/if}
-        <Button type="submit" disabled={saving || !!validation}>{saving ? 'Cerrando ODT…' : 'Cerrar ODT'}</Button>
+        <Button type="submit" disabled={saving || !!validation}>{saving ? 'Cerrando ODT…' : closesWithoutIncome ? 'Cerrar ODT sin ingreso' : 'Cerrar ODT'}</Button>
         {/if}
     </fieldset>
 </form>
@@ -161,7 +192,7 @@
     fieldset { border: 0; padding: 0; min-width: 0; }
     legend { font-weight: 600; margin-bottom: 1rem; }
     .percent { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
-    .hint { color: #525252; margin-top: .5rem; }
-    .error { color: #a2191f; }
-    .receipt, .destination { padding: 1rem; background: #defbe6; margin: 1rem 0; }
+    .hint { color: var(--taionca-secondary-text, #525252); margin-top: .5rem; }
+    .error { color: var(--taionca-error, #a2191f); }
+    .receipt, .destination { padding: 1rem; background: var(--taionca-success-layer, #defbe6); margin: 1rem 0; }
 </style>

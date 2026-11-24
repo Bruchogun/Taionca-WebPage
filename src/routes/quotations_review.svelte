@@ -1,8 +1,8 @@
 <script>
-	import 'carbon-components-svelte/css/white.css';
     import { DataTable, Grid, Row, Column } from "carbon-components-svelte";
 	import Quotations from '../components/Quotations.svelte';
 	import { apiFetch } from '../functions';
+	import { compareMoney, displayMoney } from '../lib/money';
 	let quotation;
 	let quotation_general_expenses = [];
 	let quotation_spendable_inv_expenses = [];
@@ -19,13 +19,13 @@
 	let headers_quotation_expenses = [
 		{ key: "kind", value: "Tipo de gasto" },
 		{ key: "quantity", value: "Cantidad" },
-		{ key: "amount_label", value: "Monto" },
+		{ key: "amount", value: "Monto", sort: compareMoney },
 		{ key: "description", value: "Descripción" },
 	];
 
 	let headers_currencies = [
 		{ key: "currency", value: "Moneda"  },
-		{ key: "balance", value: "Monto"  }
+		{ key: "balance", value: "Monto", sort: compareMoney }
 	];
 
 
@@ -37,7 +37,8 @@
 			kind: _quotation.kind,
 			quantity: `${Number(_quotation.quantity).toFixed(2)} ${_quotation.measure_unit}`,
 			amount: _quotation.amount,
-			amount_label: `${Number(_quotation.amount).toFixed(2)} ${_quotation.currency_symbol}`,
+			symbol: _quotation.currency_symbol,
+			currency_code: _quotation.currency_code || _quotation.currency_symbol,
 			description: _quotation.description,
 			currency: _quotation.currency_name_plural
 		}));
@@ -50,9 +51,9 @@
 			kind: quotation_inv.kind,
 			quantity: `${Number(quotation_inv.quantity).toFixed(2)} ${quotation_inv.measure_unit}`,
 			amount: quotation_inv.amount,
-			amount_label: `${Number(quotation_inv.amount).toFixed(2)} $`,
+			symbol: '$',
 			currency: "dólares",
-			currency_symbol: "$",
+			currency_code: 'USD',
 			description: quotation_inv.description
 		}));
 	}
@@ -64,9 +65,9 @@
 			kind: _quotation.kind,
 			quantity: `${Number(_quotation.quantity).toFixed(2)} ${_quotation.measure_unit}`,
 			amount: _quotation.amount,
-			amount_label: `${Number(_quotation.amount).toFixed(2)} $`,
+			symbol: '$',
 			currency: "dólares",
-			currency_symbol: "$",
+			currency_code: 'USD',
 			description: _quotation.description
 		}));
 	}
@@ -75,18 +76,18 @@
 
 	let rows_currencies = [];
 	$: if (rows_quotation_expenses.length>0){
-		const currencies_auxiliar = {};
-		rows_quotation_expenses.forEach(_quotation => {
-			if (currencies_auxiliar[_quotation.currency] === undefined) {
-				currencies_auxiliar[_quotation.currency] = 0;
-			}
-			currencies_auxiliar[_quotation.currency] += Number(_quotation.amount)
-		});
-		rows_currencies = Object.entries(currencies_auxiliar).map(([currency, balance], id) => ({
-			currency: currency.replace(/(^|\s)\S/g, l => l.toUpperCase()),
-			balance: `${Number(balance).toFixed(2)}`,
+		const totals = new Map();
+		for (const expense of rows_quotation_expenses) {
+			const key = (expense.currency_code || expense.currency).toUpperCase();
+			if (!totals.has(key)) totals.set(key, { amount: 0, currency: expense.currency });
+			totals.get(key).amount += Number(expense.amount);
+		}
+		rows_currencies = Array.from(totals, ([code, total], id) => ({
+			currency: total.currency.replace(/(^|\s)\S/g, l => l.toUpperCase()),
+			balance: total.amount,
+			currency_code: code,
 			id
-		}))
+		}));
 	}
 
 	const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -105,7 +106,7 @@
 		</Row>
 		<Row>
 			<Column padding style="outline: 1px solid var(--cds-interactive-04)">
-				<h5>Monto de contrato: {Number(quotation.amount).toFixed(2)} {quotation.symbol}</h5>
+				<h5>Monto de contrato: {displayMoney(quotation.amount, quotation.code || quotation.symbol)} {quotation.symbol}</h5>
 			</Column>
 		</Row>
 		<Row>
@@ -141,8 +142,16 @@
 	</Grid>
 
 	{#if rows_quotation_expenses.length!=0 || rows_currencies.length!=0}
-		<DataTable size="short" title="Gastos cotizados" sortable headers={headers_quotation_expenses} rows={rows_quotation_expenses} />
+		<DataTable size="short" title="Gastos cotizados" sortable headers={headers_quotation_expenses} rows={rows_quotation_expenses}>
+				<svelte:fragment slot="cell" let:cell let:row>
+					{#if cell.key === 'amount'}{displayMoney(cell.value, row.currency_code)} {row.symbol}{:else}{cell.value}{/if}
+				</svelte:fragment>
+			</DataTable>
 
-		<DataTable size="short" title="Gastos cotizados por moneda" sortable headers={headers_currencies} rows={rows_currencies} />
+		<DataTable size="short" title="Gastos cotizados por moneda" sortable headers={headers_currencies} rows={rows_currencies}>
+			<svelte:fragment slot="cell" let:cell let:row>
+				{#if cell.key === 'balance'}{displayMoney(cell.value, row.currency_code)}{:else}{cell.value}{/if}
+			</svelte:fragment>
+		</DataTable>
 	{/if}
 {/if}

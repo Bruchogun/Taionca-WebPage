@@ -21,10 +21,12 @@ export async function query(...args) {
     // Otherwise create a disposable client
     const client = new Client(config.client);
     client.on('notice', msg => console.warn('notice:', msg.message))
-    await client.connect();
-    const result = await client.query(...args);
-    client.end();
-    return result;
+    try {
+        await client.connect();
+        return await client.query(...args);
+    } finally {
+        await client.end();
+    }
 }
 
 /**

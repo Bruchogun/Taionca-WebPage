@@ -1,5 +1,6 @@
 const { expect } = require('@playwright/test');
-const { initialSettlement }=require('esm')(module)('../../src/lib/odt-settlement');
+const { loadSource }=require('./source');
+const { initialSettlement }=loadSource('lib/odt-settlement');
 const { query, createOdt }=require('./app');
 const { payment, pay }=require('./payments');
 function manualPayment(odt,account,amount,equivalent,overrides={}) {

@@ -10,7 +10,18 @@ exports.up=pgm=>{
         ALTER TABLE general_expenses ALTER COLUMN rate DROP NOT NULL;
         ALTER TABLE general_expenses ADD COLUMN historical_source jsonb;
         ALTER TABLE general_expenses ADD CONSTRAINT valid_general_expense_rate
-            CHECK(rate IS NULL OR(rate>0 AND rate<1e20));
+            CHECK(rate IS NULL OR(rate>0 AND rate<1e20)) NOT VALID;
+        DO $body$
+        DECLARE invalid_rates bigint;
+        BEGIN
+            SELECT count(*) INTO invalid_rates FROM general_expenses
+                WHERE rate IS NOT NULL AND NOT (rate>0 AND rate<1e20);
+            IF invalid_rates=0 THEN
+                ALTER TABLE general_expenses VALIDATE CONSTRAINT valid_general_expense_rate;
+            ELSE
+                RAISE WARNING 'Se conservaron % gastos con tasa historica invalida; requieren valoracion en el cierre por moneda.', invalid_rates;
+            END IF;
+        END;$body$;
         ALTER TABLE general_expenses ADD CONSTRAINT unvalued_expense_requires_history
             CHECK((rate IS NOT NULL AND historical_source IS NULL) OR
                 (rate IS NULL AND historical_source IS NOT NULL AND jsonb_typeof(historical_source)='object'));
@@ -79,7 +90,8 @@ exports.up=pgm=>{
         CREATE FUNCTION require_valued_legacy_expenses(v_id_odt integer) RETURNS void LANGUAGE plpgsql AS $body$
         BEGIN
             PERFORM 1 FROM odts WHERE id_odt=v_id_odt FOR UPDATE;
-            IF EXISTS(SELECT 1 FROM general_expenses WHERE id_odt=v_id_odt AND rate IS NULL) THEN
+            IF EXISTS(SELECT 1 FROM general_expenses WHERE id_odt=v_id_odt
+                AND (rate IS NULL OR NOT (rate>0 AND rate<1e20))) THEN
                 RAISE EXCEPTION 'Hay costes historicos sin tasa: revisa su valor en el cierre nativo por moneda.';
             END IF;
             IF EXISTS(SELECT 1 FROM odt_payments WHERE id_odt=v_id_odt AND exchange_rate IS NULL) THEN

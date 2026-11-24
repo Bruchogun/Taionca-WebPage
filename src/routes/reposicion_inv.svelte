@@ -1,5 +1,4 @@
 <script>
-	import 'carbon-components-svelte/css/white.css';
 	import Accounts from "../components/Accounts.svelte";
 	import { TextInput, Button} from "carbon-components-svelte";
 	import AllInvItems from '../components/All_inv_items.svelte';

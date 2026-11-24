@@ -59,6 +59,46 @@ test('revocaciones simultáneas conservan al menos un administrador',async({requ
  await assign(request,user,[]);
  }finally{await w.dispose();}
 });
+test('una cuenta exclusivamente contable no puede ser administradora ni contar como último administrador',async({request,playwright})=>{
+ const worker=await client(playwright);
+ try{
+  await query('UPDATE users SET password_hash=$2 WHERE user_id=$1',[user.user_id,'!accounting-only!']);
+  expect((await worker.get('/api/user')).status()).toBe(401);
+  const snapshot=await (await request.get('/api/admin/security')).json();
+  expect(snapshot.users.find(account=>account.user_id===user.user_id).can_login).toBe(false);
+  const assignment='/api/admin/users/'+user.user_id+'/roles';
+  expect((await request.put(assignment,{data:{role_ids:[1]}})).status()).toBe(409);
+  // An installation may already contain an assignment created before this check.
+  await query('INSERT INTO join_users_roles(user_id,role_id) VALUES($1,1)',[user.user_id]);
+  expect((await request.put('/api/admin/users/1/roles',{data:{role_ids:[]}})).status()).toBe(409);
+  expect((await request.put(assignment,{data:{role_ids:[]}})).status()).toBe(200);
+  expect((await request.get('/api/admin/security')).status()).toBe(200);
+ }finally{
+  await query('DELETE FROM join_users_roles WHERE user_id=$1',[user.user_id]);
+  await query('UPDATE users SET password_hash=$2 WHERE user_id=$1',[user.user_id,user.password_hash]);
+  await worker.dispose();
+ }
+});
+test('una revisión antigua no sobrescribe permisos, roles ni asignaciones recientes',async({request})=>{
+ const p=await permission(request),r=await role(request,[p.permission_id]);
+ const snapshot=await (await request.get('/api/admin/security')).json();
+ const permissionRevision=snapshot.permissions.find(item=>item.permission_id===p.permission_id).revision;
+ const roleRevision=snapshot.roles.find(item=>item.role_id===r).revision;
+ const userRevision=snapshot.users.find(item=>item.user_id===user.user_id).revision;
+ const permissionUrl='/api/admin/permissions/'+p.permission_id;
+ const roleUrl='/api/admin/roles/'+r;
+ const userUrl='/api/admin/users/'+user.user_id+'/roles';
+ await call(request,permissionUrl,'patch',{revision:permissionRevision,name:p.name,capabilities:['inventory.read']});
+ await call(request,roleUrl,'patch',{revision:roleRevision,name:'Rol actualizado '+r,permission_ids:[]});
+ await call(request,userUrl,'put',{revision:userRevision,role_ids:[r]});
+ expect((await request.delete(permissionUrl,{data:{revision:permissionRevision}})).status()).toBe(409);
+ expect((await request.patch(roleUrl,{data:{revision:roleRevision,name:'Otra edición',permission_ids:[p.permission_id]}})).status()).toBe(409);
+ expect((await request.put(userUrl,{data:{revision:userRevision,role_ids:[]}})).status()).toBe(409);
+ const updated=await (await request.get('/api/admin/security')).json();
+ expect(updated.permissions.find(item=>item.permission_id===p.permission_id).capabilities).toEqual(['inventory.read']);
+ expect(updated.roles.find(item=>item.role_id===r).permission_ids).toEqual([]);
+ expect(updated.users.find(item=>item.user_id===user.user_id).role_ids).toEqual([r]);
+});
 test('validación rechaza capacidades y roles inexistentes sin cambios parciales',async({request})=>{
  expect((await request.post('/api/admin/permissions',{data:{name:'Inválido',capabilities:['invented.superadmin']}})).status()).toBe(400);
  expect((await request.put('/api/admin/users/'+user.user_id+'/roles',{data:{role_ids:[999999]}})).status()).toBe(400);

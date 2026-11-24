@@ -1,9 +1,9 @@
 <script>
-    import 'carbon-components-svelte/css/white.css';
 	import { onMount } from 'svelte';
     import { DataTable, Grid, Row, Column} from "carbon-components-svelte";
 	import Storages from '../components/Storages.svelte';
 	import { apiFetch } from '../functions';
+	import { compareMoney, displayMoney } from '../lib/money';
 
 	let storage;
 
@@ -12,8 +12,8 @@
 			{ key: 'description', value: 'Descripción' },
 			{ key: 'manufacture', value: 'Manufactura' },
 			{ key: 'supplier', value: 'Proveedor' },
-			{ key: 'price_cost', value: 'Precio Compra' },
-			{ key: 'price_sell', value: 'Precio Venta' },
+			{ key: 'price_cost', value: 'Precio Compra', sort: compareMoney },
+			{ key: 'price_sell', value: 'Precio Venta', sort: compareMoney },
 			{ key: 'amount', value: 'Stock' },
 			{ key: 'min_stock', value: 'Stock minimo' },
 			{ key: 'mid_stock', value: 'Stock medio' },
@@ -55,8 +55,8 @@
 					manufacture: spendable_item.manufacture,
 					supplier: spendable_item.supplier,
 					amount: `${Number(spendable_item.spendable_stocks_amount).toFixed(2)} ${spendable_item.unit}`,
-                    price_sell: `$ ${Number(spendable_item.price).toFixed(2)}`,
-                    price_cost: `$ ${Number(spendable_item.cost).toFixed(2)}`,
+                    price_sell: spendable_item.price,
+                    price_cost: spendable_item.cost,
                     min_stock: `${Number(spendable_item.min_stock).toFixed(2)} ${spendable_item.unit}`,
                     mid_stock: `${Number(spendable_item.mid_stock).toFixed(2)} ${spendable_item.unit}`,
                     max_stock: `${Number(spendable_item.max_stock).toFixed(2)} ${spendable_item.unit}`,
@@ -75,8 +75,8 @@
 					manufacture: no_spendable_item.manufacture,
 					supplier: no_spendable_item.supplier,
 					amount: `${Number(no_spendable_item.no_spendable_stocks_amount).toFixed(2)} ${no_spendable_item.unit}`,
-					price_sell: `$ ${Number(no_spendable_item.price).toFixed(2)}`,
-					price_cost: `$ ${Number(no_spendable_item.cost).toFixed(2)}`,
+					price_sell: no_spendable_item.price,
+					price_cost: no_spendable_item.cost,
                     min_stock: `${Number(no_spendable_item.min_stock).toFixed(2)} ${no_spendable_item.unit}`,
                     mid_stock: `${Number(no_spendable_item.mid_stock).toFixed(2)} ${no_spendable_item.unit}`,
                     max_stock: `${Number(no_spendable_item.max_stock).toFixed(2)} ${no_spendable_item.unit}`,
@@ -124,6 +124,11 @@
 		height: 1.5em;
 		background-color: rgb(0, 255, 0);
 	}
+
+	:global(html[theme="g100"]) .black,
+	:global(html[theme="g100"]) .blue{
+		outline: 1px solid var(--cds-ui-04);
+	}
 </style>
 
 	<Storages bind:storage={storage} />
@@ -166,6 +171,8 @@
 						<div class="green"/>
 					{:else if cell.key === 'status' && cell.value === 'blue'}
 						<div class="blue"/>
+					{:else if cell.key === 'price_cost' || cell.key === 'price_sell'}
+						$ {displayMoney(cell.value, 'USD')}
 					{:else}
 						{cell.value}
 					{/if}

@@ -1,12 +1,11 @@
 import { transaction,invalid } from '../../../lib/api-transaction';
 import { compose } from "compose-middleware";
-import { ROLES_DELETE, ROLES_READ, ROLES_UPDATE } from "../../../constants/PERMISSIONS";
 import { query } from "../../../db";
 import checkPermissionsMW from "../../../middlewares/checkPermissionsMW";
 
 // Get role
 export const get = compose(
-    checkPermissionsMW(ROLES_READ),
+    checkPermissionsMW(),
     async (req, res) => {
         const {role_id} = req.params;
 

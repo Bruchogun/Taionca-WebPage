@@ -1,9 +1,10 @@
 import { query } from '../db';
 import { policy } from './access';
+import { ACCOUNTING_ONLY_PASSWORD } from './account';
 export async function identity(userId) {
     const user=(await query(`SELECT user_id,username,name,lastname,special_user,session_version,
         ARRAY(SELECT role_id FROM join_users_roles WHERE user_id=u.user_id ORDER BY role_id) roles
-        FROM users u WHERE user_id=$1`,[userId])).rows[0];
+        FROM users u WHERE user_id=$1 AND password_hash<>$2`,[userId,ACCOUNTING_ONLY_PASSWORD])).rows[0];
     if(!user) return null;
     const permissions=(await query(`SELECT DISTINCT p.* FROM permissions p JOIN join_roles_permissions rp USING(permission_id)
         JOIN join_users_roles ur USING(role_id) WHERE ur.user_id=$1 AND p.deleted_at IS NULL ORDER BY permission_id`,[userId])).rows;

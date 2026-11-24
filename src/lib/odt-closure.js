@@ -18,10 +18,15 @@ export function validateClosure(body) {
     if (!body || typeof body !== 'object') return 'Los datos del cierre son obligatorios.';
     if (!validId(body.id_odt)) return 'Selecciona una ODT abierta.';
     if (body.settle_payments !== undefined && typeof body.settle_payments !== 'boolean') return 'El tipo de cierre es inválido.';
-    if (body.settle_payments === true && body.id_account != null) return 'El cierre utiliza las cuentas de los abonos registrados.';
-    if (!body.settle_payments && !validId(body.id_account)) return 'Selecciona la cuenta de destino.';
-    if (!decimal(body.amount, 10, 20) || Number(body.amount) <= 0) {
-        return 'El monto pagado debe ser mayor que cero y tener como máximo 10 decimales.';
+    if (!decimal(body.amount, 10, 20)) {
+        return 'Indica un monto pagado válido con hasta 10 decimales.';
+    }
+    const zero = Number(body.amount) === 0;
+    if (zero) {
+        if (body.id_account != null || body.settle_payments) return 'El cierre sin ingreso no lleva una cuenta de destino ni abonos.';
+    } else {
+        if (body.settle_payments && body.id_account != null) return 'El cierre utiliza las cuentas de los abonos registrados.';
+        if (!body.settle_payments && !validId(body.id_account)) return 'Selecciona la cuenta de destino.';
     }
     for (const key of ['admin_percent', 'ceo_percent']) {
         if (!decimal(body[key], 5, 1) || Number(body[key]) > 1) {
@@ -32,6 +37,7 @@ export function validateClosure(body) {
     let commissionUnits = Math.round(Number(body.ceo_percent) * 100000);
     for (const key of ['admin_users', 'operative_users', 'supervisor_users']) {
         if (!Array.isArray(body[key])) return 'Las listas de comisiones son obligatorias.';
+        if (zero && body[key].length) return 'El cierre sin ingreso no lleva comisiones.';
         const seen = new Set();
         for (const user of body[key]) {
             if (!user || !validId(user.id_user)) return 'Selecciona un usuario en cada comisión o elimina la fila vacía.';
@@ -43,6 +49,7 @@ export function validateClosure(body) {
             commissionUnits += Math.round(Number(user.profit_percent) * 100000);
         }
     }
+    if (zero && (Number(body.admin_percent) || commissionUnits)) return 'El cierre sin ingreso no reparte administración ni comisiones.';
     if (commissionUnits > 100000) return 'La suma de las comisiones, incluido el presidente, no puede superar el 100%.';
     return '';
 }

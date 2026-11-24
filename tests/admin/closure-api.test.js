@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test');
+const { randomUUID } = require('crypto');
 const { query, login, createOdt, payload, closure, ledger, destination } = require('../helpers/app');
 
 test.beforeEach(async ({ request }) => { await login(request); });
@@ -110,4 +111,53 @@ test('ODT ownership is enforced even for a user with closure permission', async 
     expect((await other.post('/api/public/closure_odt', { data })).status()).toBe(403);
     await other.dispose();
     expect(await closure(data.id_odt)).toBeUndefined();
+});
+
+async function documentFinalAmount(id, amount) {
+    return query('SELECT set_odt_settlement_amount($1,$2,1,$3,$4,$5)',
+        [id, amount, 'Ajuste documentado de prueba', { source_key: 'test-closure-target:' + id }, randomUUID()]);
+}
+
+test('cierra directamente por el importe acordado y conserva el contrato original', async ({ request }) => {
+    const data = await payload();
+    await documentFinalAmount(data.id_odt, '725.5');
+    const endpoint = '/api/public/closure_odt';
+    expect((await request.post(endpoint, { data })).status()).toBe(400);
+    expect(await ledger(data.id_odt)).toEqual([]);
+    expect((await request.post(endpoint, { data: { ...data, amount: '725.5' } })).status()).toBe(200);
+    expect(await closure(data.id_odt)).toMatchObject({ amount: '725.5000000000', settled_from_payments: false });
+    expect((await query('SELECT amount FROM odts WHERE id_odt=$1', [data.id_odt]))[0].amount).toBe('1000.0000000000');
+});
+
+test('el cierre sin ingreso exige importe acordado cero y conserva los saldos', async ({ request }) => {
+    const data = await payload({ id_account: null, amount: '0', admin_percent: '0', ceo_percent: '0' });
+    const endpoint = '/api/public/closure_odt';
+    expect((await request.post(endpoint, { data })).status()).toBe(400);
+    await documentFinalAmount(data.id_odt, '0');
+    expect((await request.post(endpoint, { data: { ...data, ceo_percent: '0.1' } })).status()).toBe(400);
+    expect((await request.post(endpoint, { data })).status()).toBe(200);
+    expect(await closure(data.id_odt)).toMatchObject({
+        amount: '0.0000000000', id_account: null, settled_from_payments: false, taionca_profit: '0.0000000000'
+    });
+    expect(await ledger(data.id_odt)).toEqual([]);
+    expect((await request.post(endpoint, { data })).status()).toBe(409);
+});
+
+test('el cierre sin ingreso se bloquea si quedan gastos o nómina por conciliar', async ({ request }) => {
+    const account = await destination();
+    const data = await payload({ id_account: null, amount: '0', admin_percent: '0', ceo_percent: '0' });
+    await documentFinalAmount(data.id_odt, '0');
+    await query('INSERT INTO payroll_odt_hours(id_supervisor,id_user,id_odt,hours_spent) VALUES(1,201,$1,1)', [data.id_odt]);
+    const endpoint = '/api/public/closure_odt';
+    const pending = await request.post(endpoint, { data });
+    expect(pending.status()).toBe(400);
+    expect((await pending.json()).error).toContain('nómina');
+    await query('UPDATE payroll_odt_hours SET is_paid=true WHERE id_odt=$1', [data.id_odt]);
+    await query(`INSERT INTO general_expenses(id_account,id_odt,amount,rate,description,id_measure,quantity)
+        VALUES($1,$2,100,1,'Gasto por conciliar',1,1)`, [account.id_account, data.id_odt]);
+    const expense = await request.post(endpoint, { data });
+    expect(expense.status()).toBe(400);
+    expect((await expense.json()).error).toContain('gastos');
+    expect(await closure(data.id_odt)).toBeUndefined();
+    expect(await ledger(data.id_odt)).toEqual([]);
 });

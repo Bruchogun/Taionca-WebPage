@@ -3,6 +3,10 @@ export function safeOdtExpense(handler) {
     return async (req,res) => {
         try { return await handler(req,res); }
         catch (error) {
+            if (error.status) {
+                res.statusCode = error.status;
+                return res.json({ error: error.message });
+            }
             if (error.code==='P0001') {
                 res.statusCode=/cerrada/.test(error.message)?409:400;
                 return res.json({error:error.message});

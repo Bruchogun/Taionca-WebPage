@@ -9,10 +9,14 @@
     }
 </script>
 <script>
+    import 'carbon-components-svelte/css/all.css';
     import Logout32 from 'carbon-icons-svelte/lib/Logout32';
+    import Moon20 from 'carbon-icons-svelte/lib/Moon20';
+    import Sun20 from 'carbon-icons-svelte/lib/Sun20';
     import { goto,stores } from '@sapper/app';
     import { onMount } from 'svelte';
     import { session,notifications } from '../stores';
+    import { notify } from '../functions';
     import { canPage,pageAccess } from '../security/access';
     import { Header,HeaderUtilities,HeaderAction,HeaderGlobalAction,HeaderPanelLinks,HeaderPanelDivider,HeaderPanelLink,SideNav,SideNavItems,SideNavMenu,SideNavMenuItem,SideNavLink,SkipToContent,Content,InlineNotification,ToastNotification } from 'carbon-components-svelte';
     import Loader from '../components/Loader.svelte';
@@ -36,7 +40,44 @@
     }
     $: $session=authUser;
     let isSideNavOpen=false,isOpen=false;
-    onMount(()=>{isSideNavOpen=window.innerWidth>=1056;});
+    let mounted=false,loggingOut=false;
+    const themeKey='taionca-theme';
+    let themePreference=null,darkMode=false;
+
+    function applyTheme(dark){
+        darkMode=dark;
+        document.documentElement.setAttribute('theme',dark?'g100':'white');
+    }
+
+    function toggleTheme(){
+        themePreference=darkMode?'light':'dark';
+        applyTheme(themePreference==='dark');
+        try{window.localStorage.setItem(themeKey,themePreference);}catch(error){/* Keep the choice for this page. */}
+    }
+
+    onMount(()=>{
+        isSideNavOpen=window.innerWidth>=1056;
+        const systemTheme=window.matchMedia('(prefers-color-scheme: dark)');
+        function syncTheme(){
+            try{
+                const saved=window.localStorage.getItem(themeKey);
+                themePreference=saved==='light'||saved==='dark'?saved:null;
+            }catch(error){themePreference=null;}
+            applyTheme(themePreference===null?systemTheme.matches:themePreference==='dark');
+        }
+        function followSystem(event){if(themePreference===null)applyTheme(event.matches);}
+        function syncStorage(event){if(event.key===themeKey||event.key===null)syncTheme();}
+        syncTheme();
+        if(systemTheme.addEventListener)systemTheme.addEventListener('change',followSystem);
+        else systemTheme.addListener(followSystem);
+        window.addEventListener('storage',syncStorage);
+        mounted=true;
+        return ()=>{
+            if(systemTheme.removeEventListener)systemTheme.removeEventListener('change',followSystem);
+            else systemTheme.removeListener(followSystem);
+            window.removeEventListener('storage',syncStorage);
+        };
+    });
     const groups=[
         ['Gestión de usuarios',[
             ['/signup','Crear usuario'],['/ingreso_clients','Crear cliente'],['/asignar_responsabilities','Asignar responsabilidad'],['/ingreso_responsabilities','Crear responsabilidad'],['/approve_responsabilities','Aprobar responsabilidad'],['/responsabilities','Responsabilidades'],['/attendance','Asistencia'],['/asign_hours_odt','Horas por ODT'],['/loans','Gestión de deudas'],['/give_loans','Dar préstamos'],['/pay_loans','Pagar préstamos']]],
@@ -51,21 +92,37 @@
     ];
     $: visibleGroups=groups.map(([label,links])=>[label,links.filter(([path])=>canPage($session,path))]).filter(([,links])=>links.length);
     async function logout(){
-        const response=await fetch('/api/user',{method:'DELETE'});
-        if(response.ok){authUser=null;$session=null;await goto('/login');}
+        if(!mounted || loggingOut) return;
+        loggingOut=true;
+        try {
+            const response=await fetch('/api/user',{method:'DELETE'});
+            if(!response.ok && response.status!==401) throw new Error();
+            accessVersion++;
+            authUser=null;
+            $session=null;
+            await goto('/login');
+        } catch {
+            notify('No se pudo cerrar la sesión. Inténtalo nuevamente.');
+        } finally {
+            loggingOut=false;
+        }
     }
 </script>
 <style>
     .notifications{position:fixed;display:flex;flex-direction:column-reverse;bottom:0;right:0;z-index:9999}
     @media(max-width:65.99rem){:global(#main-content.bx--content){margin-left:0;padding:1rem}}
+    @media(max-width:24rem){.platform-name{display:none}}
 </style>
-<Header href={canPage($session,'/')?'/':'/attendance'} company="Taionca" platformName="Página Web" bind:isSideNavOpen>
+<Header href={canPage($session,'/')?'/':'/attendance'} company="Taionca" bind:isSideNavOpen>
     <div slot="skip-to-content"><SkipToContent/></div>
+    <span slot="platform" class="platform-name">Página Web</span>
     <HeaderUtilities>
         {#if $session}
             <HeaderAction bind:isOpen><HeaderPanelLinks><HeaderPanelDivider>Preferencias de usuario</HeaderPanelDivider><HeaderPanelLink href="/change_password">Cambiar contraseña</HeaderPanelLink></HeaderPanelLinks></HeaderAction>
-            <HeaderGlobalAction on:click={logout} aria-label="Cerrar sesión" iconDescription="Cerrar sesión" icon={Logout32}/>
+            <HeaderGlobalAction disabled={!mounted || loggingOut} on:click={logout} aria-label="Cerrar sesión" iconDescription="Cerrar sesión" icon={Logout32}/>
         {/if}
+        <HeaderGlobalAction disabled={!mounted} on:click={toggleTheme} aria-label="Modo oscuro" aria-pressed={darkMode}
+            title={darkMode?'Activar modo claro':'Activar modo oscuro'} icon={darkMode?Sun20:Moon20}/>
     </HeaderUtilities>
 </Header>
 <SideNav ariaLabel="Navegación principal" bind:isOpen={isSideNavOpen}><SideNavItems>

@@ -1,7 +1,7 @@
 <script>
-	import 'carbon-components-svelte/css/white.css';
     import { Grid, Row, Column } from "carbon-components-svelte";
 	import AllInvItems from '../components/All_inv_items.svelte';
+	import { displayMoney } from '../lib/money';
 	
 	let item;
 
@@ -21,12 +21,12 @@
 		</Row>
 		<Row>
 			<Column padding style="outline: 1px solid var(--cds-interactive-04)">
-				<h5>Costo: {Number(item.cost).toFixed(2)} $</h5>
+				<h5>Costo: {displayMoney(item.cost, 'USD')} $</h5>
 			</Column>
 		</Row>
 		<Row>
 			<Column padding style="outline: 1px solid var(--cds-interactive-04)">
-				<h5>Precio de venta: {Number(item.price).toFixed(2)} $</h5>
+				<h5>Precio de venta: {displayMoney(item.price, 'USD')} $</h5>
 			</Column>
 		</Row>
 		<Row>

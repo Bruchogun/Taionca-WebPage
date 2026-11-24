@@ -1,16 +1,21 @@
-import { query } from "../db"
-import fs from 'fs'
+const fs = require('fs').promises;
+const { Client } = require('pg');
+require('dotenv').config();
 
-(async () => {
-    const {rows: permissions} = await query("SELECT permission_id, code AS name FROM permissions WHERE is_system=true");
+async function exportLegacyPermissions() {
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) throw new Error('Configure DATABASE_URL before exporting legacy permissions.');
+    const client = new Client({ connectionString, connectionTimeoutMillis: 5000 });
+    try {
+        await client.connect();
+        const { rows } = await client.query('SELECT permission_id, code FROM permissions WHERE is_system ORDER BY permission_id');
+        const declarations = rows.map(({ permission_id, code }) => {
+            const constant = code.toUpperCase();
+            if (!/^[A-Z_][A-Z0-9_]*$/.test(constant)) throw new Error('Invalid legacy permission code.');
+            return 'export const ' + constant + ' = ' + JSON.stringify([code, permission_id]) + ';';
+        });
+        await fs.writeFile('src/constants/PERMISSIONS.js', declarations.join('\n') + '\n');
+    } finally { await client.end(); }
+}
 
-    const constants_js_declarations = permissions.map( ({permission_id, name}) => (`export const ${name.toUpperCase()} = ['${name}', ${permission_id}];`) );
-
-    const file_content = constants_js_declarations.join("\n");
-    const filepath = "./src/constants/PERMISSIONS.js";
-
-    fs.writeFile(filepath, file_content, (err) => {
-        process.exit();
-    });
-})();
-
+exportLegacyPermissions().catch(error => { console.error(error.message); process.exitCode = 1; });

@@ -2,3 +2,13 @@ __sapper__
 cypress
 node_modules
 /src/node_modules/@sapper/
+.env*
+.local-runtime/
+tests/
+test-results/
+playwright-report/
+*.log
+scripts/import-ledger-*.cjs
+scripts/stage-google-ledger.cjs
+scripts/split-ledger-machinery.cjs
+scripts/lib/clarified-expense-prerequisites.cjs

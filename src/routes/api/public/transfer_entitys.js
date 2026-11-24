@@ -1,6 +1,5 @@
 import { safeOdtExpense } from '../../../lib/odt-expense-errors';
 import { compose } from "compose-middleware";
-import { USERS_READ } from "../../../constants/PERMISSIONS";
 import { sql } from "../../../db";
 import checkPermissionsMW from "../../../middlewares/checkPermissionsMW";
 

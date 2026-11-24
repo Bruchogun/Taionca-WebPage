@@ -1,8 +1,6 @@
 import { safeOdtExpense } from '../../../lib/odt-expense-errors';
 import { sql } from '../../../db';
 import { compose } from "compose-middleware";
-import { USERS_READ } from "../../../constants/PERMISSIONS";
-import { getRate } from "../../../functions";
 import checkPermissionsMW from "../../../middlewares/checkPermissionsMW";
 
 export const post = safeOdtExpense(

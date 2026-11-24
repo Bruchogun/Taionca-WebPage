@@ -1,14 +1,13 @@
 <script>
 	import { allows } from '../security/access';
-    import 'carbon-components-svelte/css/white.css';
-    import { Button, ContentSwitcher, DataTable, Switch, Toolbar, ToolbarContent, ToolbarSearch } from "carbon-components-svelte";
+    import { Button, ContentSwitcher, DataTable, Switch, TextInput, Toolbar, ToolbarContent, ToolbarSearch } from "carbon-components-svelte";
 	import { apiFetch } from '../functions';
     import { onMount, tick } from 'svelte';
     import { session } from '../stores';
     
-	let entry_time;
-	let departure_time;
-	let selectedIndex;
+	let entry_time = '';
+	let departure_time = '';
+	let selectedIndex = 0;
     let attendances;
     let user_id;
 	let value = "";
@@ -55,8 +54,8 @@
 	}
 
 	function cleanWindows(){
-		entry_time = null;
-		departure_time = null;
+		entry_time = '';
+		departure_time = '';
 	}
 
 	//Asistance viewer
@@ -124,27 +123,24 @@
 
 </script>
 
-<ContentSwitcher on:click={cleanWindows} bind:selectedIndex>
-	<Switch text="Llegada"/>
-	<Switch text="Salida"/>
-	<Switch text="Ambos"/>
-</ContentSwitcher>
-
-{#if selectedIndex===0 || selectedIndex===2}
-<form>
-	<label for="entry_time">Selecciona la hora de llegada:</label>
-	<input id="entry_time" type="time" bind:value={entry_time}>
-</form>	
-{/if}
-
-{#if selectedIndex===1 || selectedIndex===2}
-<form>
-	<label for="departure_time">Selecciona la hora de salida:</label>
-	<input id="departure_time" type="time" bind:value={departure_time}>
-</form>
-{/if}
-
-<Button on:click={send_attendance}>Enviar</Button>
+<div class="attendance-form">
+	<ContentSwitcher aria-label="Tipo de registro de asistencia" on:change={cleanWindows} bind:selectedIndex>
+		<Switch text="Llegada"/>
+		<Switch text="Salida"/>
+		<Switch text="Ambos"/>
+	</ContentSwitcher>
+	<form on:submit|preventDefault={send_attendance}>
+		<div class="attendance-times">
+			{#if selectedIndex === 0 || selectedIndex === 2}
+				<TextInput id="entry_time" type="time" labelText="Hora de llegada" bind:value={entry_time} />
+			{/if}
+			{#if selectedIndex === 1 || selectedIndex === 2}
+				<TextInput id="departure_time" type="time" labelText="Hora de salida" bind:value={departure_time} />
+			{/if}
+		</div>
+		<Button type="submit">Enviar</Button>
+	</form>
+</div>
 
 <DataTable stickyHeader size="compact" title="Registro de asistencia" sortable {headers} rows={filteredRows}>
 	<Toolbar>
@@ -157,3 +153,17 @@
 		</ToolbarContent>
 	</Toolbar>
 </DataTable>
+
+<style>
+	.attendance-form {
+		max-width: 34rem;
+		margin-bottom: 1.5rem;
+	}
+
+	.attendance-times {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+		gap: 1rem;
+		margin: 1rem 0;
+	}
+</style>

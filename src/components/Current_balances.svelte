@@ -1,6 +1,7 @@
 <script>
 
 	import { apiFetch } from "../functions";
+	import { displayMoney } from "../lib/money";
 	import { onMount } from "svelte";
 	
 	let balances;
@@ -40,23 +41,6 @@
 		
 		// Convert object to array
 		return Object.values(accountSums);
-	}
-
-	// Function to format numbers based on currency
-	function formatBalance(balance, currencyCode) {
-	if (currencyCode === 'BTC') {
-		return balance.toFixed(8); // Bitcoin uses 8 decimal places
-	} else if (currencyCode === 'COP') {
-		return new Intl.NumberFormat('es-CO', { 
-		minimumFractionDigits: 0,
-		maximumFractionDigits: 0 
-		}).format(balance);
-	} else {
-		return new Intl.NumberFormat('en-US', { 
-		minimumFractionDigits: 2,
-		maximumFractionDigits: 2 
-		}).format(balance);
-	}
 	}
 
 	// Group accounts by currency for better organization
@@ -109,7 +93,7 @@
                 </td>
                 <td class="balance text-right">
                   <span class="currency-symbol">{account.currency_symbol}</span>
-                  <span class="amount">{formatBalance(account.total_balance, account.currency_code)}</span>
+                  <span class="amount">{displayMoney(account.total_balance, account.currency_code || account.currency_symbol)}</span>
                 </td>
               </tr>
             {/each}
@@ -122,9 +106,9 @@
 
 <style>
   .accounts-table-container {
-    background: white;
+    background: var(--taionca-layer, white);
     border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 3px var(--taionca-shadow, rgba(0, 0, 0, 0.1));
     margin: 20px 0;
   }
 
@@ -140,15 +124,15 @@
   }
 
   .accounts-table thead {
-    background-color: #f8f9fa;
-    border-bottom: 2px solid #e9ecef;
+    background-color: var(--taionca-layer-raised, #f8f9fa);
+    border-bottom: 2px solid var(--taionca-border-subtle, #e9ecef);
   }
 
   .accounts-table th {
     padding: 12px 16px;
     text-align: left;
     font-weight: 600;
-    color: #495057;
+    color: var(--taionca-secondary-text, #495057);
     font-size: 13px;
     text-transform: uppercase;
     letter-spacing: 0;
@@ -156,21 +140,21 @@
 
   .accounts-table td {
     padding: 12px 16px;
-    border-bottom: 1px solid #e9ecef;
+    border-bottom: 1px solid var(--taionca-border-subtle, #e9ecef);
     vertical-align: middle;
   }
 
   .account-row:hover {
-    background-color: #f8f9fa;
+    background-color: var(--taionca-layer-raised, #f8f9fa);
   }
 
   .account-row.zero-balance {
-    opacity: 0.6;
+    opacity: var(--taionca-zero-balance-opacity, 0.6);
   }
 
   .account-name {
     font-weight: 500;
-    color: #212529;
+    color: var(--taionca-text, #212529);
   }
 
   .currency {
@@ -185,17 +169,17 @@
   }
 
   .currency-code {
-    background-color: #e9ecef;
+    background-color: var(--taionca-layer-raised, #e9ecef);
     padding: 2px 6px;
     border-radius: 4px;
     font-size: 11px;
     font-weight: 500;
-    color: #6c757d;
+    color: var(--taionca-secondary-text, #6c757d);
   }
 
   .balance {
     font-weight: 600;
-    color: #212529;
+    color: var(--taionca-text, #212529);
     white-space: nowrap;
   }
 

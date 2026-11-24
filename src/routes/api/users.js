@@ -2,13 +2,12 @@ import { transaction,invalid } from '../../lib/api-transaction';
 import argon2 from "argon2";
 import { argon as config } from "../../config";
 import { compose } from "compose-middleware";
-import { USERS_READ } from "../../constants/PERMISSIONS";
 import checkPermissionsMW from "../../middlewares/checkPermissionsMW";
 import { query } from "../../db";
 
 // List users
 export const get = compose(
-    checkPermissionsMW(USERS_READ),
+    checkPermissionsMW(),
     async (req, res) => {
 
         const {rows: users} = await res.sql`

@@ -1,5 +1,4 @@
 <script>
-	import 'carbon-components-svelte/css/white.css';
 	import OpenOdts from '../components/Open_odts.svelte';
 	import ClosedOdts from '../components/Closed_odts_review.svelte';
     import { ContentSwitcher, Switch } from 'carbon-components-svelte';

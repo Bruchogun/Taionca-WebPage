@@ -1,5 +1,4 @@
 <script>
-	import 'carbon-components-svelte/css/white.css';
 	import { TextInput, Button } from "carbon-components-svelte";
 	import { apiFetch } from '../functions';
 	import Currency from '../components/Currency.svelte';

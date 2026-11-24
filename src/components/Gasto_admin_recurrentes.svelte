@@ -1,5 +1,4 @@
 <script>
-	import 'carbon-components-svelte/css/white.css';
 	import {Button} from "carbon-components-svelte";
 	import Accounts from  "../components/Accounts.svelte";
 	import Select_AdminInventory from  "../components/Select_AdminInventory.svelte";

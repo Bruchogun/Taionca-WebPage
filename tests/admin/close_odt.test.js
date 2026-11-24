@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test');
+const { randomUUID } = require('crypto');
 const { query, login, createOdt, closure, ledger, selectOdt, selectAccount } = require('../helpers/app');
 
 test.beforeEach(async ({ page }) => { await login(page.request); });
@@ -43,6 +44,36 @@ test('switching ODT clears the account even with the same currency; currency fil
     await page.getByPlaceholder('Selecciona la cuenta de destino...').click();
     await expect(page.locator('.listContainer .item').filter({hasText:'Destino ODT pruebas'})).toHaveCount(0);
     await expect(page.locator('.listContainer .item').first()).toContainText('(Bs)');
+});
+
+test('el formulario usa el importe acordado y permite cerrar un importe cero sin cuenta', async ({ page }) => {
+    const agreed = await createOdt();
+    const zero = await createOdt();
+    for (const [odt, amount] of [[agreed, '700.1234567890'], [zero, '0']]) {
+        await query('SELECT set_odt_settlement_amount($1,$2,1,$3,$4,$5)',
+            [odt.id_odt, amount, 'Ajuste documentado de prueba', { source_key: 'test-closure-page:' + odt.id_odt }, randomUUID()]);
+    }
+    await page.goto('/cerrar_odt');
+    await selectOdt(page, agreed.id_odt);
+    const field = page.getByLabel('Importe final acordado');
+    await expect(field).toHaveValue('700.12');
+    await expect(field).not.toBeEditable();
+    await selectAccount(page);
+    await page.getByRole('button', { name: 'Cerrar ODT', exact: true }).click();
+    await expect(page.getByRole('status').filter({ hasText: 'Se registraron' })).toContainText('700.12');
+    expect((await closure(agreed.id_odt)).amount).toBe('700.1234567890');
+    await page.goto('/abonos_odt?odt=' + zero.id_odt);
+    await expect(page.getByRole('status').filter({ hasText: 'importe final acordado es cero' })).toBeVisible();
+    await page.getByRole('link', { name: 'Revisar y cerrar esta ODT' }).click();
+    await expect(page.getByPlaceholder('Selecciona la cuenta de destino...')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Cerrar ODT sin ingreso' }).click();
+    await expect(page.getByRole('status').filter({ hasText: 'cerrada sin ingreso' })).toBeVisible();
+    expect(await ledger(zero.id_odt)).toEqual([]);
+    await page.goto('/odts_review');
+    await page.getByText('ODTs cerradas', { exact: true }).click();
+    await page.getByPlaceholder('Odts cerradas...').fill(String(zero.id_odt));
+    await page.locator('.listContainer .item').filter({ hasText: new RegExp('^' + zero.id_odt + ' \\|') }).click();
+    await expect(page.getByText('Cierre sin ingreso', { exact: true })).toBeVisible();
 });
 
 test('editing percentages preserves the entered value and rejects excessive totals', async ({ page }) => {

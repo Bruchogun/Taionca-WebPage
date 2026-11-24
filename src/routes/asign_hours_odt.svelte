@@ -1,5 +1,4 @@
 <script>
-    import 'carbon-components-svelte/css/white.css';
     import { Button, NumberInput } from "carbon-components-svelte";
 	import { apiFetch } from '../functions';
 	import { onMount } from 'svelte';

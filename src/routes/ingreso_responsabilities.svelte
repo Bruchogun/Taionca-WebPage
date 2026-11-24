@@ -1,5 +1,4 @@
 <script>
-	import 'carbon-components-svelte/css/white.css';
 	import { TextInput, Button, TextArea, NumberInput } from "carbon-components-svelte";
 	import { apiFetch } from '../functions';
 	import TimeFrequency from '../components/Time_frequency.svelte';

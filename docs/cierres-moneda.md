@@ -87,14 +87,14 @@ Migración: `1790709000000_manual-currency-closures.js`. Añade resultados, comi
 
 Rutas nuevas: `GET /api/public/odt_settlement/:id_odt` para preparar un cierre y `POST /api/public/odt_settlement` para confirmarlo. Ambas verifican sesión, permiso de actualización y acceso a la ODT. El cierre directo anterior permanece disponible para una ODT sin abonos.
 
-Desde `C:\Proyectos\taionca`:
+Desde la carpeta de beta:
 
 ```powershell
 npm test
 npm run test:all
 ```
 
-Las pruebas usan una base temporal, aplican las 41 migraciones desde cero, comprueban reversión y reaplicación de la última migración y eliminan la base al terminar. La segunda orden también compila cliente, servidor y service worker. Las pruebas incluyen los módulos anteriores, la navegación de las 44 rutas principales, abonos manuales, los tres modos de cierre, pérdidas por moneda, reasignaciones, cambios bancarios, importes extremos, redondeos, permisos, concurrencia, errores, historial y móvil.
+Las pruebas aplican las migraciones vigentes en un clúster temporal y lo eliminan al terminar. `npm run test:all` también compila la aplicación y verifica la conservación de cierres históricos al actualizar el esquema. Las pruebas cubren abonos manuales, los tres modos de cierre, importes y redondeos, permisos, concurrencia, errores, historial y móvil. Consulta la [configuración de pruebas](../README.md#pruebas).
 
 Respaldo anterior a esta ampliación: `C:\Proyectos\taionca-backups\cierres-moneda-20260929\before-cierres-moneda.dump`, validado con `pg_restore --list`. La misma carpeta conserva el código previo y la evidencia de las verificaciones. Los informes de pruebas están en `playwright-report/index.html` y `test-results/results.json`.
 

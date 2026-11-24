@@ -1,5 +1,4 @@
 <script>
-	import 'carbon-components-svelte/css/white.css';
 	import {FormGroup, RadioButtonGroup, RadioButton} from "carbon-components-svelte";
 	import Gasto_admin_otros from '../components/Gasto_admin_otros.svelte'
 	import Gasto_admin_recurrentes from '../components/Gasto_admin_recurrentes.svelte'

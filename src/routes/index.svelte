@@ -1,6 +1,6 @@
 <script>
-	import 'carbon-components-svelte/css/white.css';
     import { Button, ContentSwitcher, DatePickerInput, Switch } from 'carbon-components-svelte';
+    import { Spanish } from 'flatpickr/dist/l10n/es.js';
 	import { onMount } from 'svelte';
     import Entitys from '../components/Entitys.svelte';
     import OpenOdts from '../components/Open_odts.svelte';
@@ -26,6 +26,20 @@
 	let balance_registers;
 	let selectedIndexODT;
 	let balances;
+
+    function filterDate(value, endOfDay = false) {
+        if (value instanceof Date) return value;
+        const parts = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(value);
+        if (!parts) return null;
+        const [, day, month, year] = parts.map(Number);
+        const date = new Date(year, month - 1, day);
+        if (date.getDate() !== day || date.getMonth() !== month - 1 || date.getFullYear() !== year) return null;
+        if (endOfDay) date.setHours(23, 59, 59, 999);
+        return date;
+    }
+
+    $: filterStart = filterDate(start_date);
+    $: filterEnd = filterDate(end_date, true);
 
 	onMount(async ()=>{
         if (!DatePicker) DatePicker = (await import('carbon-components-svelte/src/DatePicker/DatePicker.svelte')).default;
@@ -223,11 +237,11 @@
 	<div>
 		<div class="OnSameLine">
 			{#if DatePicker}
-				<svelte:component this={DatePicker} bind:value={start_date} datePickerType="single" locale={navigator.language}>
-					<DatePickerInput placeholder="Fecha inicial" />
+				<svelte:component this={DatePicker} bind:value={start_date} datePickerType="single" locale={Spanish} dateFormat="d/m/Y">
+					<DatePickerInput labelText="Fecha inicial" hideLabel iconDescription="Calendario de fecha inicial" />
 				</svelte:component>
-				<svelte:component this={DatePicker} bind:value={end_date} datePickerType="single" locale={navigator.language}>
-					<DatePickerInput placeholder="Fecha final" />
+				<svelte:component this={DatePicker} bind:value={end_date} datePickerType="single" locale={Spanish} dateFormat="d/m/Y">
+					<DatePickerInput labelText="Fecha final" hideLabel iconDescription="Calendario de fecha final" />
 				</svelte:component>
 			{/if}	
 		</div>
@@ -267,18 +281,12 @@
 			<Switch text="ODTs abiertas" />
 		</ContentSwitcher>
 
-		{#if start_date && end_date}
-			{#if selectedIndexODT === 0}
-				<OpenOdts is_filtered={true} start_date={start_date} end_date={end_date}/>
-			{/if}
-		
-			{#if selectedIndexODT === 1}
-				<Closed_odts_review is_filtered={true} start_date={start_date} end_date={end_date}/>
-			{/if}
-
-			{#if selectedIndexODT === 2}
-				<OpenOdts is_filtered={false}/>
-			{/if}
+		{#if selectedIndexODT === 0 && filterStart && filterEnd}
+			<OpenOdts is_filtered={true} start_date={filterStart} end_date={filterEnd}/>
+		{:else if selectedIndexODT === 1 && filterStart && filterEnd}
+			<Closed_odts_review is_filtered={true} start_date={filterStart} end_date={filterEnd}/>
+		{:else if selectedIndexODT === 2}
+			<OpenOdts is_filtered={false}/>
 		{/if}
 
 		<Loans/>

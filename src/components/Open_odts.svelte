@@ -1,9 +1,9 @@
 <script>
-	import 'carbon-components-svelte/css/white.css';
     import { DataTable, Grid, Row, Column, Button } from "carbon-components-svelte";
 	import Odt_payment_history from './Odt_payment_history.svelte';
     import Odts from './Odts.svelte';
 	import { apiFetch } from '../functions';
+	import { compareMoney, displayMoney } from '../lib/money';
     import PercentInput from './PercentInput.svelte';
     import { tick } from 'svelte';
 	import { session } from '../stores';
@@ -53,13 +53,13 @@
 		let headers_balance_movements = [
 			{ key: "entity", value: "Entidad"  },
 			{ key: "account", value: "Cuenta" },
-			{ key: "amount_label", value: "Monto" },
+			{ key: "amount", value: "Monto", sort: compareMoney },
 			{ key: "created_at", value: "Fecha" },
 	];
 
 	let headers_currencies = [
 		{ key: "currency", value: "Moneda"  },
-		{ key: "balance", value: "Saldo gastado"  }
+		{ key: "balance", value: "Saldo gastado", sort: compareMoney }
 	];
 
 
@@ -70,30 +70,27 @@
 			id_balance: movement.id_balance,
 			entity: movement.entity,
 			account: movement.account,
-			end_balance: Number(movement.end_balance).toFixed(2),
 			created_at: (new Date(movement.created_at)).toLocaleDateString(),
 			id: movement.id_balance_movement,
 			amount: movement.amount,
-			amount_label: `${Number(movement.amount).toFixed(2)} ${movement.symbol}`,
+			currency_code: movement.currency_code || movement.symbol,
+			symbol: movement.symbol,
 			currency: movement.currency.replace(/(^|\s)\S/g, l => l.toUpperCase())
 		}));
 	}
 	let rows_currencies = [];
 	function set_data_currency_movements(){
-		if (rows_balance_movements.length>0){
-			const currencies_auxiliar = {};
-			rows_balance_movements.forEach(movement => {
-				if (currencies_auxiliar[movement.currency] === undefined) {
-					currencies_auxiliar[movement.currency] = 0;
-				}
-				currencies_auxiliar[movement.currency] += Number(movement.amount)
-			});
-			rows_currencies = Object.entries(currencies_auxiliar).map(([currency, balance], id) => ({
-				currency,
-				balance: Number(balance).toFixed(2),
-				id
-			}))
+		const totals = new Map();
+		for (const movement of rows_balance_movements) {
+			if (!totals.has(movement.currency)) totals.set(movement.currency, { amount: 0, code: movement.currency_code });
+			totals.get(movement.currency).amount += Number(movement.amount);
 		}
+		rows_currencies = Array.from(totals, ([currency, total], id) => ({
+			currency,
+			balance: total.amount,
+			currency_code: total.code,
+			id
+		}));
 	}
 
 	const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -112,7 +109,7 @@
 		</Row>
 		<Row>
 			<Column padding style="outline: 1px solid var(--cds-interactive-04)">
-				<h5>Monto de contrato: {Number(odt.amount).toFixed(2)} {odt.symbol}</h5>
+				<h5>Monto de contrato: {displayMoney(odt.amount, odt.code || odt.symbol)} {odt.symbol}</h5>
 			</Column>
 		</Row>
 		<Row>
@@ -151,15 +148,33 @@
 		</Row>		
 	</Grid>
     {#if paymentSummary}
-        <p>Abonado: {paymentSummary.paid_amount} {paymentSummary.currency_code} · Pendiente: {paymentSummary.remaining_amount} {paymentSummary.currency_code}</p>
-        {#if allows($session,['odts.payments'])}<p><a href={'/abonos_odt?odt=' + odt.id_odt}>Registrar abonos de esta ODT</a></p>{/if}
+        <p>Abonado: {displayMoney(paymentSummary.paid_amount, paymentSummary.currency_code || paymentSummary.symbol)} {paymentSummary.currency_code} · Pendiente: {displayMoney(paymentSummary.remaining_amount, paymentSummary.currency_code || paymentSummary.symbol)} {paymentSummary.currency_code}</p>
+        {#if allows($session,['odts.payments'])}
+            <p class="payment-action">
+                <Button kind="tertiary" size="small" href={'/abonos_odt?odt=' + odt.id_odt}>
+                    Registrar abonos de esta ODT
+                </Button>
+            </p>
+        {/if}
         <Odt_payment_history summary={paymentSummary} />
     {/if}
     {#if paymentError}<p role="alert">{paymentError}</p>{/if}
 
 	{#if rows_balance_movements.length!=0 || rows_currencies.length!=0}
-		<DataTable size="short" title="Gastos por moneda" sortable headers={headers_currencies} rows={rows_currencies} />
+		<DataTable size="short" title="Gastos por moneda" sortable headers={headers_currencies} rows={rows_currencies}>
+			<svelte:fragment slot="cell" let:cell let:row>
+				{#if cell.key === 'balance'}{displayMoney(cell.value, row.currency_code)}{:else}{cell.value}{/if}
+			</svelte:fragment>
+		</DataTable>
 		
-		<DataTable size="short" title="Gastos de la ODT" sortable headers={headers_balance_movements} rows={rows_balance_movements} />
+		<DataTable size="short" title="Gastos de la ODT" sortable headers={headers_balance_movements} rows={rows_balance_movements}>
+				<svelte:fragment slot="cell" let:cell let:row>
+					{#if cell.key === 'amount'}{displayMoney(cell.value, row.currency_code)} {row.symbol}{:else}{cell.value}{/if}
+				</svelte:fragment>
+			</DataTable>
 	{/if}
 {/if}
+
+<style>
+    .payment-action { margin: .5rem 0 1rem; }
+</style>

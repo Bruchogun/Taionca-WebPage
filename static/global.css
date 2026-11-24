@@ -23,10 +23,111 @@ a {
 code {
 	font-family: menlo, inconsolata, monospace;
 	font-size: calc(1em - 2px);
-	color: #555;
-	background-color: #f0f0f0;
+	color: var(--taionca-secondary-text, #555);
+	background-color: var(--taionca-layer, #f0f0f0);
 	padding: 0.2em 0.4em;
 	border-radius: 2px;
+}
+
+html[theme="g100"] {
+	color-scheme: dark;
+	background: var(--cds-ui-background, #161616);
+	--taionca-text: var(--cds-text-01);
+	--taionca-secondary-text: var(--cds-text-02);
+	--taionca-layer: var(--cds-ui-01);
+	--taionca-layer-raised: var(--cds-ui-02);
+	--taionca-field: var(--cds-field-02);
+	--taionca-border: var(--cds-ui-04);
+	--taionca-border-subtle: var(--cds-ui-03);
+	--taionca-accent: var(--cds-link-01);
+	--taionca-focus: var(--cds-focus);
+	--taionca-error: var(--cds-text-error);
+	--taionca-error-layer: var(--cds-tag-background-red);
+	--taionca-info-layer: var(--cds-tag-background-blue);
+	--taionca-success-layer: var(--cds-tag-background-green);
+	--taionca-warning: var(--cds-support-03);
+	--taionca-warning-layer: var(--cds-notification-background-warning);
+	--taionca-shadow: rgba(0, 0, 0, 0.4);
+	--taionca-zero-balance-opacity: 1;
+
+	/* svelte-select uses these inherited tokens in its input and results. */
+	--background: var(--cds-field-01);
+	--border: 1px solid var(--cds-ui-04);
+	--borderHoverColor: var(--cds-text-02);
+	--borderFocusColor: var(--cds-focus);
+	--inputColor: var(--cds-text-01);
+	--placeholderColor: var(--cds-text-02);
+	--disabledBackground: var(--cds-ui-01);
+	--disabledBorderColor: var(--cds-ui-03);
+	--disabledColor: var(--cds-disabled-02);
+	--disabledPlaceholderColor: var(--cds-disabled-02);
+	--errorBackground: var(--cds-ui-01);
+	--indicatorColor: var(--cds-icon-01);
+	--clearSelectColor: var(--cds-icon-02);
+	--clearSelectHoverColor: var(--cds-icon-01);
+	--clearSelectFocusColor: var(--cds-icon-01);
+	--listBackground: var(--cds-ui-02);
+	--listShadow: 0 2px 6px var(--taionca-shadow);
+	--listEmptyColor: var(--cds-text-02);
+	--groupTitleColor: var(--cds-text-02);
+	--itemColor: var(--cds-text-01);
+	--itemActiveBackground: var(--cds-active-ui);
+	--itemHoverBG: var(--cds-hover-ui);
+	--itemIsActiveBG: var(--cds-interactive-01);
+	--itemIsActiveColor: var(--cds-text-04);
+	--multiItemBG: var(--cds-ui-02);
+	--multiItemActiveBG: var(--cds-interactive-01);
+	--multiItemActiveColor: var(--cds-text-04);
+	--multiItemDisabledHoverBg: var(--cds-ui-02);
+	--multiItemDisabledHoverColor: var(--cds-disabled-02);
+}
+
+html[theme="g100"] body,
+html[theme="g100"] #main-content.bx--content {
+	background: var(--cds-ui-background);
+	color: var(--cds-text-01);
+}
+
+html[theme="g100"] #main-content a:not(.bx--btn) {
+	color: var(--cds-link-01);
+}
+
+/* Carbon's UI shell uses fixed side navigation colors in this version. */
+html[theme="g100"] .bx--side-nav {
+	background: var(--cds-ui-01);
+	color: var(--cds-text-01);
+}
+
+html[theme="g100"] .bx--side-nav button.bx--side-nav__submenu,
+html[theme="g100"] .bx--side-nav a.bx--side-nav__link > .bx--side-nav__link-text,
+html[theme="g100"] .bx--side-nav .bx--side-nav__submenu-title {
+	color: var(--cds-text-01);
+}
+
+html[theme="g100"] .bx--side-nav .bx--side-nav__icon svg {
+	fill: var(--cds-icon-01);
+}
+
+html[theme="g100"] .bx--side-nav .bx--side-nav__item > a.bx--side-nav__link:hover,
+html[theme="g100"] .bx--side-nav .bx--side-nav__menu a.bx--side-nav__link:hover,
+html[theme="g100"] .bx--side-nav .bx--side-nav__item button.bx--side-nav__submenu:hover {
+	background: var(--cds-hover-ui);
+}
+
+html[theme="g100"] .bx--side-nav .bx--side-nav__menu-item a.bx--side-nav__link:hover > span,
+html[theme="g100"] .bx--side-nav .bx--side-nav__item > a.bx--side-nav__link:hover > span {
+	color: var(--cds-text-01);
+}
+
+html[theme="g100"] .bx--side-nav a.bx--side-nav__link[aria-current="page"],
+html[theme="g100"] .bx--side-nav a.bx--side-nav__link.bx--side-nav__link--current,
+html[theme="g100"] .bx--side-nav .bx--side-nav__item--active .bx--side-nav__submenu[aria-expanded="false"] {
+	background: var(--cds-selected-ui);
+}
+
+html[theme="g100"] .bx--side-nav a.bx--side-nav__link[aria-current="page"] > .bx--side-nav__link-text,
+html[theme="g100"] .bx--side-nav a.bx--side-nav__link.bx--side-nav__link--current > .bx--side-nav__link-text {
+	color: var(--cds-text-01);
 }
 
 @media (min-width: 400px) {

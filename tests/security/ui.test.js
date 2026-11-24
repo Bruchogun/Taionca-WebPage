@@ -31,7 +31,19 @@ test('panel de administración funciona en pantalla móvil sin desbordamiento',a
  await page.setViewportSize({width:390,height:844});await login(page.request);await page.goto('/administracion_permisos');await page.getByRole('button',{name:'Permisos',exact:true}).click();await expect(page.getByLabel('Nombre del permiso',{exact:true})).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1)).toBe(true);
 });
 test('cerrar sesión desde el menú oculta permisos y permite iniciar otra sesión',async({page})=>{
- await login(page.request);await page.goto('/administracion_permisos');await page.getByRole('button',{name:'Cerrar sesión',exact:true}).click();await expect(page).toHaveURL('/login');await expect(page.getByRole('link',{name:'Administrar permisos'})).toHaveCount(0);expect((await page.request.get('/api/admin/security')).status()).toBe(401);
+ await login(page.request);
+ let hydrate;
+ const allowScripts=new Promise(resolve=>{hydrate=resolve;});
+ await page.route('**/client/*.js',async route=>{await allowScripts;await route.continue();});
+ const button=page.getByRole('button',{name:'Cerrar sesión',exact:true});
+ try {
+     await page.goto('/administracion_permisos',{waitUntil:'commit'});
+     await expect(button).toBeDisabled();
+ } finally {hydrate();}
+ const logoutResponse=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/user' && response.request().method()==='DELETE');
+ await button.click();
+ expect((await logoutResponse).ok()).toBe(true);
+ await expect(page).toHaveURL('/login');await expect(page.getByRole('link',{name:'Administrar permisos'})).toHaveCount(0);expect((await page.request.get('/api/admin/security')).status()).toBe(401);
  await page.getByPlaceholder('Ingrese su usuario...').fill('admin');await page.getByPlaceholder('Ingrese su contraseña...').fill('test-admin-odt');await page.getByRole('button',{name:'Iniciar sesión',exact:true}).click();await expect(page).toHaveURL('/');await expect(page.getByRole('button',{name:'Cerrar sesión',exact:true})).toBeVisible();
 });
 test('fallo de verificación mantiene panel oculto y permite reintentar',async({page})=>{

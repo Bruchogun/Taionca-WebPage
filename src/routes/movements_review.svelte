@@ -1,9 +1,9 @@
 <script>
-	import 'carbon-components-svelte/css/white.css';
 	import { onMount } from 'svelte';
     import { DataTable, DatePickerInput } from "carbon-components-svelte";
 	import Entitys from "../components/Entitys.svelte";
 	import { apiFetch, notify } from '../functions';
+	import { compareMoney, displayMoney } from '../lib/money';
 	
 	// Movements
 	
@@ -24,7 +24,7 @@
 	{ key: "entity", value: "Entidad"  },
 	{ key: "odt", value: "ODT"  },
     { key: "account", value: "Cuenta" },
-    { key: "amount", value: "Monto" },
+    { key: "amount", value: "Monto", sort: compareMoney },
     { key: "created_at", value: "Fecha" },
 	];
 	
@@ -42,8 +42,8 @@
 			entity: movement.entity,
 			odt: movement.id_odt,
 			account: `${movement.account} ${movement.currency}`,
-			amount: Number(movement.amount).toFixed(2),
-			end_balance: Number(movement.end_balance).toFixed(2),
+			amount: movement.amount,
+			currency: movement.currency,
 			created_at: (new Date(movement.created_at)).toLocaleDateString()
 		}));
 	}
@@ -60,8 +60,8 @@
     //HEADERS
 	let headers_balances = [
 		{ key: "name", value: "Cuentas"  },
-		{ key: "balance_inicial", value: "Saldo inicial" },
-		{ key: "balance_final", value: "Saldo final" }
+		{ key: "balance_inicial", value: "Saldo inicial", sort: compareMoney },
+		{ key: "balance_final", value: "Saldo final", sort: compareMoney }
 	];
 	
 	
@@ -70,6 +70,7 @@
 	$: if (entity && balances.length>0) balances_filtered = balances.filter(({id_entity}) => id_entity === entity.value);
 	$: if (entity && balances.length>0 && movements_filtered.length>0){
 		rows_balances = balances_filtered.map(balance => {
+			const currencyCode = balance.code || balance.symbol;
 			const movements_filtered_by_entity_and_account = movements_filtered.filter( movement => (balance.id_balance === movement.id_balance) )
 
 			let balance_inicial = Number(balance.balance);
@@ -89,20 +90,19 @@
 									: balance_final/validate_balance_final;
 			if (!(0.9999999999<=error_margin && error_margin<=1.0000000001)) {
 				console.error({validate_balance_final, balance_final});
-				notify("Error", "error", `Balance final no concuerda. Esto no debe pasar, avisar inmediatamente a maurito. ${validate_balance_final} - ${balance_final}`);
+				notify("Error", "error", `Balance final no concuerda. Esto no debe pasar, avisar inmediatamente a maurito. ${displayMoney(validate_balance_final, currencyCode)} - ${displayMoney(balance_final, currencyCode)}`);
 				return;
 			}
 
 			return {
 				amount: balance.balance,
 				id: balance.id_balance,
-				balance_inicial: `${Number(balance_inicial).toFixed(2)} ${balance.symbol}`,
-				balance_inicial_num: balance_inicial,
-				balance_final: `${Number(balance_final).toFixed(2)} ${balance.symbol}`,
-				balance_final_num: balance_final,
+				balance_inicial,
+				balance_final,
 				name: `(${balance.symbol}) ${balance.name}`,
 				currency: balance.name_plural.replace(/(^|\s)\S/g, l => l.toUpperCase()),
-				symbol: balance.symbol
+				symbol: balance.symbol,
+				currencyCode
 			}
 		});
 	}
@@ -111,8 +111,8 @@
     //HEADERS
 	let headers_currencies = [
 		{ key: "currency", value: "Moneda"  },
-		{ key: "balance_inicial", value: "Saldo inicial"  },
-		{ key: "balance_final", value: "Saldo final"  }
+		{ key: "balance_inicial", value: "Saldo inicial", sort: compareMoney },
+		{ key: "balance_final", value: "Saldo final", sort: compareMoney }
 	];
 
 	let rows_currencies = [];
@@ -122,10 +122,8 @@
 			if (currencies_auxiliar[balance.currency] === undefined) {
 				return currencies_auxiliar[balance.currency] = {...balance};
 			}
-			currencies_auxiliar[balance.currency].balance_final_num += balance.balance_final_num;
-			currencies_auxiliar[balance.currency].balance_final = `${Number(currencies_auxiliar[balance.currency].balance_final_num).toFixed(2)} ${balance.symbol}`;
-			currencies_auxiliar[balance.currency].balance_inicial_num += balance.balance_inicial_num;
-			currencies_auxiliar[balance.currency].balance_inicial = `${Number(currencies_auxiliar[balance.currency].balance_inicial_num).toFixed(2)} ${balance.symbol}`;
+			currencies_auxiliar[balance.currency].balance_final += balance.balance_final;
+			currencies_auxiliar[balance.currency].balance_inicial += balance.balance_inicial;
 		});
 		rows_currencies = Object.entries(currencies_auxiliar).map(([key, balance]) => balance)
 	}
@@ -153,12 +151,26 @@
 {/if}	
 </div>
 
-<DataTable size="short" title="Movimientos" sortable headers={headers_movements} rows={rows_movements} />
+<DataTable size="short" title="Movimientos" sortable headers={headers_movements} rows={rows_movements}>
+	<span slot="cell" let:cell let:row>
+		{#if cell.key === 'amount'}{displayMoney(cell.value, row.currency)}{:else}{cell.value}{/if}
+	</span>
+</DataTable>
 
 <Entitys bind:entity={entity}/>
 
 <div class="OnSameLine">
-	{#if rows_balances.length!=0}<DataTable size="short" title="Balance" sortable headers={headers_balances} rows={rows_balances} />{/if}
+	{#if rows_balances.length!=0}
+		<DataTable size="short" title="Balance" sortable headers={headers_balances} rows={rows_balances}>
+			<span slot="cell" let:cell let:row>
+				{#if cell.key === 'name'}{cell.value}{:else}{displayMoney(cell.value, row.currencyCode)} {row.symbol}{/if}
+			</span>
+		</DataTable>
+	{/if}
 </div>
 
-<DataTable size="short" title="Balance de monedas" sortable headers={headers_currencies} rows={rows_currencies} />
+<DataTable size="short" title="Balance de monedas" sortable headers={headers_currencies} rows={rows_currencies}>
+	<span slot="cell" let:cell let:row>
+		{#if cell.key === 'currency'}{cell.value}{:else}{displayMoney(cell.value, row.currencyCode)} {row.symbol}{/if}
+	</span>
+</DataTable>

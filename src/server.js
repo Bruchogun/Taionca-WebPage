@@ -24,7 +24,7 @@ export default polka() // You can also use Express
         authentication,
 	)
 	.use('/api',
-		json(),
+		json({ inflate: false }),
         authorizeApi,
         csrf,
 		logs,

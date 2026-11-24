@@ -1,5 +1,4 @@
 <script>
-    import 'carbon-components-svelte/css/white.css';
     import { apiFetch } from '../functions';
     import PayrollAccount from '../components/Payroll_account.svelte';
     import { Button, Tile } from 'carbon-components-svelte';
@@ -9,9 +8,25 @@
     function selection() {
         return payroll_accounts.flatMap(({hours_by_odt,account})=>hours_by_odt.map(h=>({id_payroll_odt_hour:h.id_payroll_odt_hour,id_account:account.id_account})));
     }
+    function displayHours(value) {
+        if (value == null) return 'Pendiente';
+        const [whole, fraction = ''] = String(value).split('.');
+        const decimals = fraction.replace(/0+$/, '');
+        return whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (decimals ? '.' + decimals : '');
+    }
     async function get_preview() {
+        const accounts = payroll_accounts.map(({ account }) => account);
         preview=[];saving=true;
-        try { const result=await apiFetch('/api/public/payroll_preview',{method:'POST',body:JSON.stringify({payrolls:selection()}),headers:{'Content-Type':'application/json'}});preview=result.payroll; }
+        try {
+            const result = await apiFetch('/api/public/payroll_preview', {
+                method: 'POST', body: JSON.stringify({ payrolls: selection() }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+            preview = result.payroll.map(row => {
+                const account = accounts.find(account => account?.id_account === row.v_id_account);
+                return { ...row, currency: account?.code?.toUpperCase() || account?.symbol };
+            });
+        }
         finally {saving=false;}
     }
     async function send_payroll() {
@@ -25,6 +40,6 @@
 {#key generation}<PayrollAccount label="Nómina" bind:payroll_accounts/>{/key}
 <Button disabled={!valid || saving} on:click={get_preview}>Calcular nómina</Button>
 {#each preview as row}
-    <Tile>Usuario {row.v_id_user} · Cuenta {row.v_id_account}: {displayMoney(row.v_amount)} {payroll_accounts.find(p=>p.account && p.account.id_account===row.v_id_account)?.account.code.toUpperCase()} · {displayMoney(row.v_total_hours)} horas</Tile>
+    <Tile>Usuario {row.v_id_user} · Cuenta {row.v_id_account}: {displayMoney(row.v_amount, row.currency)} {row.currency || ''} · {displayHours(row.v_total_hours)} horas</Tile>
 {/each}
 <Button disabled={!valid || saving} on:click={send_payroll}>Pagar nómina</Button>

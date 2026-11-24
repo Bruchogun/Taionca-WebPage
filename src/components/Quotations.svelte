@@ -5,6 +5,7 @@
 	/** @type {"vertical" | "horizontal"}*/
 	import { onMount } from 'svelte';
 	import { apiFetch } from '../functions';
+	import { displayMoney } from '../lib/money';
 	
 	/**
 	 * Get quotations, If needed
@@ -21,11 +22,11 @@
 		quotationsToList = quotations.map(_quotation => {
 			const {id_quotation, name, created_at, amount, symbol} = _quotation;
             const date=(new Date(created_at)).toLocaleString("es-ES",options);
-            const quotation_amount=Number(amount).toFixed(2);
+            const quotation_amount = displayMoney(amount, _quotation.code || symbol);
 			return ({
 				..._quotation,
 				value: id_quotation, 
-				label: `${id_quotation} | ${name} | ${symbol}.${quotation_amount} | ${date}`
+				label: `${id_quotation} | ${name} | ${symbol}${quotation_amount} | ${date}`
 			})
 		})
 	}

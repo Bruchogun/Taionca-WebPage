@@ -1,11 +1,10 @@
 import { compose } from 'compose-middleware';
-import { ROLES_READ } from '../../constants/PERMISSIONS';
 import checkPermissionsMW from '../../middlewares/checkPermissionsMW';
 import { query } from '../../db';
 export { createRole as post } from '../../security/management';
 // List roles
 export const get = compose(
-    checkPermissionsMW(ROLES_READ),
+    checkPermissionsMW(),
     async (req, res) => {
 
         const {rows: roles} = await query(

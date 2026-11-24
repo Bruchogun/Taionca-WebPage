@@ -3,12 +3,12 @@
 </script>
 
 <script>
-    import 'carbon-components-svelte/css/white.css';
     import { TextInput, Button } from 'carbon-components-svelte';
     import Odts from '../components/Odts.svelte';
     import Accounts from '../components/Accounts.svelte';
     import Odt_payment_history from '../components/Odt_payment_history.svelte';
-    import { apiFetch, format_number } from '../functions';
+    import { apiFetch } from '../functions';
+    import { displayMoney } from '../lib/money';
     import { validatePayment, paymentKey } from '../lib/odt-payments';
 
     export let initialOdt = null;
@@ -96,9 +96,9 @@
         {#if loading}<p role="status">Cargando abonos…</p>{/if}
         {#if summary}
             <div class="summary" data-testid="payment-summary">
-                <p>Valor de la ODT: <strong>{format_number(summary.amount, 'currency')} {summary.currency_code}</strong></p>
-                <p>Abonado: <strong>{format_number(summary.paid_amount, 'currency')} {summary.currency_code}</strong></p>
-                <p>Pendiente: <strong>{format_number(summary.remaining_amount, 'currency')} {summary.currency_code}</strong></p>
+                <p>Valor de la ODT: <strong>{displayMoney(summary.amount, summary.currency_code || summary.symbol)} {summary.currency_code}</strong></p>
+                <p>Abonado: <strong>{displayMoney(summary.paid_amount, summary.currency_code || summary.symbol)} {summary.currency_code}</strong></p>
+                <p>Pendiente: <strong>{displayMoney(summary.remaining_amount, summary.currency_code || summary.symbol)} {summary.currency_code}</strong></p>
             </div>
             {#if !summary.closed && Number(summary.remaining_amount) > 0}
                 {#key odt.id_odt}<Accounts bind:account label="Cuenta que recibió el abono" placeholder="Selecciona la cuenta del abono..." />{/key}
@@ -108,6 +108,8 @@
                     <p>Escribe cuánto representa este pago en la moneda original de la ODT. No se calculará ninguna tasa.</p>
                 {:else if account}<p>La cuenta y la ODT tienen la misma moneda; el equivalente es el monto del abono.</p>{/if}
                 <TextInput labelText="Referencia o descripción del abono" bind:value={description} maxlength={512} />
+            {:else if !summary.closed && summary.settlement_amount != null && Number(summary.settlement_amount) === 0}
+                <p role="status">El importe final acordado es cero. Puedes revisar el cierre sin ingreso.</p>
             {:else}
                 <p role="status">{summary.closed ? 'La ODT está cerrada.' : 'La ODT está completamente pagada. Ya puedes revisar y confirmar su cierre.'}</p>
             {/if}
@@ -121,16 +123,22 @@
         <Button type="submit" disabled={saving || loading || (!pending && (!!validation || !summary))}>{saving ? 'Registrando abono…' : pending ? 'Reintentar abono' : 'Registrar abono'}</Button>
     {/if}
 </form>
-{#if summary && !summary.closed}<p class="close-link"><a href={'/cerrar_odt?odt=' + summary.id_odt}>Revisar y cerrar esta ODT</a></p>{/if}
+{#if summary && !summary.closed}
+    <p class="close-link">
+        <Button kind="tertiary" size="small" href={'/cerrar_odt?odt=' + summary.id_odt}>
+            Revisar y cerrar esta ODT
+        </Button>
+    </p>
+{/if}
 <Odt_payment_history {summary} />
 
 <style>
     h1, p { margin-bottom: 1rem; }
     fieldset { border: 0; min-width: 0; padding: 0; }
     legend { margin-bottom: 1rem; font-weight: 600; }
-    .summary, .receipt { padding: 1rem; background: #defbe6; margin: 1rem 0; }
+    .summary, .receipt { padding: 1rem; background: var(--taionca-success-layer, #defbe6); margin: 1rem 0; }
     .summary p { margin-bottom: .5rem; }
-    .hint { color: #525252; }
-    .error { color: #a2191f; }
+    .hint { color: var(--taionca-secondary-text, #525252); }
+    .error { color: var(--taionca-error, #a2191f); }
     .close-link { margin: 1.5rem 0; }
 </style>

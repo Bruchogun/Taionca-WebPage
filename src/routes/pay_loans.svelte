@@ -1,8 +1,8 @@
 <script>
-	import 'carbon-components-svelte/css/white.css';
 	import {TextInput,  TextArea, Button, DataTable} from "carbon-components-svelte";
 	import Accounts from  "../components/Accounts.svelte";
 	import { apiFetch } from '../functions';
+	import { amountColumn } from '../lib/money-table';
     import Users from '../components/Users.svelte';
 	
 	let user;
@@ -38,14 +38,14 @@
 		rows = loans_filtered.map(loan => ({
 			id: loan.id_loan,
 			currency: loan.name_plural.replace(/(^|\s)\S/g, l => l.toUpperCase()),
-			amount: `${Number(loan.amount).toFixed(2)} ${loan.symbol}`
+			amount: { value: loan.amount, currency: loan.code, symbol: loan.symbol }
 		}));
 	}
 
     //HEADERS
 	let headers = [
 	{ key: "currency", value: "Moneda"  },
-    { key: "amount", value: "Saldo adeudado" }
+    { ...amountColumn, value: "Saldo adeudado" }
 	];
 
 </script>

@@ -11,7 +11,7 @@ Entra con una cuenta que tenga el rol administrador `master`. En el menú latera
 
 Los usuarios reciben la unión de los permisos de sus roles. No hay asignaciones individuales de permisos. Para retirar un acceso, revisa todos los roles que lo conceden. Los cambios se aplican a las solicitudes siguientes, incluso en sesiones que ya estaban abiertas.
 
-El rol administrador tiene acceso completo, incluido este panel. Puedes asignarlo a otra persona. No se puede eliminar el rol administrador ni dejar el sistema sin al menos una persona que lo tenga. La marca histórica `special_user` no concede acceso a este panel.
+El rol administrador tiene acceso completo, incluido este panel. Puedes asignarlo a otra persona si su cuenta permite iniciar sesión. El sistema siempre debe conservar al menos una cuenta habilitada con ese rol. La marca histórica `special_user` no concede acceso a este panel.
 
 ## Protección aplicada
 
@@ -21,7 +21,7 @@ El rol administrador tiene acceso completo, incluido este panel. Puedes asignarl
 - Los permisos efectivos se consultan en la base de datos en cada solicitud. No se confía en permisos enviados por el navegador ni en una copia antigua almacenada en la sesión.
 - Las operaciones de administración comprueban nuevamente el rol dentro de la transacción y serializan los cambios para proteger al último administrador.
 - Los identificadores de sesión se renuevan al entrar y al cambiar la contraseña. El cambio de contraseña invalida las demás sesiones. Cerrar sesión destruye la sesión guardada.
-- Se limitan los intentos repetidos de contraseña para la misma combinación de usuario y origen de conexión: cinco intentos en quince minutos. El mensaje de credenciales incorrectas no revela si el usuario existe.
+- En ventanas de quince minutos se permiten cinco intentos por combinación de usuario y origen, veinte por usuario y ciento veinte por origen. Los accesos válidos liberan su intento del contador de origen. Solo se toma `X-Forwarded-For` desde un proxy incluido por IP exacta en `LOGIN_TRUSTED_PROXY_IPS`. Configura esa variable solo si el proxy valida o adjunta la IP que observó en la conexión. El mensaje de credenciales incorrectas no revela si el usuario existe.
 - Las escrituras requieren JSON y rechazan orígenes externos. Las cookies utilizan `HttpOnly` y `SameSite=Strict`, y `Secure` en producción.
 - La consulta de asistencia y deudas entrega únicamente los datos de la persona, salvo que su rol permita la consulta general.
 - Las contraseñas y las cookies de sesión no se incluyen en los registros de solicitudes.

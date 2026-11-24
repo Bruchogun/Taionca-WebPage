@@ -1,8 +1,7 @@
 import { safeOdtExpense } from '../../../lib/odt-expense-errors';
 import { compose } from "compose-middleware";
-import { USERS_READ } from "../../../constants/PERMISSIONS";
 import { sql } from "../../../db";
-import { getRate } from "../../../functions";
+import { getRate } from '../../../lib/exchange-rate';
 import checkPermissionsMW from "../../../middlewares/checkPermissionsMW";
 
 // Rate based in dollars

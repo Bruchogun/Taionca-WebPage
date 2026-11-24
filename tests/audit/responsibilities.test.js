@@ -1,7 +1,8 @@
 const {test,expect}=require('@playwright/test');
 const {login,query}=require('../helpers/app');
 const {post,unique}=require('../helpers/audit');
-const {followingDate}=require('esm')(module)('../../src/lib/responsibility-dates');
+const {loadSource}=require('../helpers/source');
+const {followingDate}=loadSource('lib/responsibility-dates');
 for(const [date,term,days,expected] of [['2026-01-14','daily',null,'2026-01-15'],['2026-01-14','weekly',null,'2026-01-21'],['2026-01-14','biweekly',null,'2026-01-15'],['2026-01-15','biweekly',null,'2026-01-31'],['2026-01-31','biweekly',null,'2026-02-15'],['2026-01-31','monthly',null,'2026-02-28'],['2024-02-29','yearly',null,'2025-02-28'],['2026-01-31','bimonthly',null,'2026-03-31'],['2026-01-31','quarterly',null,'2026-04-30'],['2026-01-31','biannual',null,'2026-07-31'],['2026-01-31','every x days',3,'2026-02-03']])test('recurrencia '+date+' '+term,()=>{
  expect(followingDate(date+'T12:00:00Z',term,days).toISOString().slice(0,10)).toBe(expected);
 });

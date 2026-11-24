@@ -1,5 +1,4 @@
 <script>
-	import 'carbon-components-svelte/css/white.css';
 	import { Button, DatePickerInput, NumberInput, Tile } from "carbon-components-svelte";
 	import { apiFetch, next_date } from '../functions';
 	import Responsibilitys from '../components/Responsibilitys.svelte';

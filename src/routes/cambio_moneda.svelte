@@ -1,6 +1,5 @@
 <script>
 	import { Button, TextArea, Tile, TextInput } from "carbon-components-svelte";
-	import 'carbon-components-svelte/css/white.css';
 	import Accounts from "../components/Accounts.svelte";
 	import Entitys from "../components/Entitys.svelte";
 	import { apiFetch } from "../functions";

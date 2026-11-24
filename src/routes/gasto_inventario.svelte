@@ -1,5 +1,4 @@
 <script>
-	import 'carbon-components-svelte/css/white.css';
 	import { Button, TextInput, TextArea } from "carbon-components-svelte";
 	import All_inv_items from '../components/All_inv_items.svelte';
 	import Odts from "../components/Odts.svelte";

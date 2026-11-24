@@ -1,12 +1,11 @@
 import { transaction,invalid } from '../../../lib/api-transaction';
 import { compose } from "compose-middleware";
-import { USERS_READ, USERS_UPDATE } from "../../../constants/PERMISSIONS";
 import checkPermissionsMW from "../../../middlewares/checkPermissionsMW";
 import { query } from "../../../db";
 
 // Get user
 export const get = compose(
-    checkPermissionsMW(USERS_READ),
+    checkPermissionsMW(),
     async (req, res) => {
         const {user_id} = req.params;
         const {rows: [user]} = await query(

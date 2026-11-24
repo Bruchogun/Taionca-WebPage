@@ -100,9 +100,9 @@
                     {#each targetAccounts as account}<option value={account.id_account}>{account.name} ({account.code})</option>{/each}
                 </select>
             </label>
-            {#if targetAccount}<p>Saldo actual de Taionca: {displayMoney(targetAccount.balance)} {targetAccount.code}.</p>{/if}
+            {#if targetAccount}<p>Saldo actual de Taionca: {displayMoney(targetAccount.balance, targetAccount.code)} {targetAccount.code}.</p>{/if}
             {#each requiredIncome as currency}
-                <TextInput type="number" labelText={'¿Cuánto representan ' + displayMoney(currency.amount) + ' ' + currency.code + ' en ' + currencyCode(input.id_currency) + '?'}
+                <TextInput type="number" labelText={'¿Cuánto representan ' + displayMoney(currency.amount, currency.code) + ' ' + currency.code + ' en ' + currencyCode(input.id_currency) + '?'}
                     value={(input.income_values.find(v=>v.id_currency===currency.id_currency)||{}).amount || ''}
                     on:input={event=>setIncome(currency.id_currency,event.target.value)} min="0" step="any" disabled={saving} />
             {/each}
@@ -115,7 +115,7 @@
             {#each source.expenses as expense,index (expense.expense_key)}
                 <article data-expense={expense.expense_key}>
                     <strong>{expense.description || expense.expense_key}</strong>
-                    <p>{expense.expense_key} · {expense.source_amount!==null ? 'Original: '+displayMoney(expense.source_amount)+' '+expense.source_code : 'No hay importe contable histórico: indica el monto que debe asumir el cierre.'}</p>
+                    <p>{expense.expense_key} · {expense.source_amount!==null ? 'Original: '+displayMoney(expense.source_amount, expense.source_code)+' '+expense.source_code : 'No hay importe contable histórico: indica el monto que debe asumir el cierre.'}</p>
                     {#if (source.unvalued_legacy_expenses || []).includes(expense.expense_key)}<p class="valuation-pending">Tasa histórica pendiente</p>{/if}
                     <label class="field">Moneda que asume este gasto
                         <select aria-label={'Moneda del gasto ' + expense.expense_key} bind:value={input.expenses[index].id_currency} on:change={()=>changeExpense(index)} disabled={saving}>
@@ -123,9 +123,13 @@
                             {#each input.parts as part}<option value={part.id_currency}>{currencyCode(part.id_currency)}</option>{/each}
                         </select>
                     </label>
-                    <TextInput type="number" labelText={'Importe del gasto ' + expense.expense_key + ' en ' + currencyCode(input.expenses[index].id_currency)}
-                        bind:value={input.expenses[index].amount} min="0" step="any"
-                        disabled={saving || (expense.source_currency===Number(input.expenses[index].id_currency) && expense.source_amount!==null)} />
+                    {#if expense.source_currency===Number(input.expenses[index].id_currency) && expense.source_amount!==null}
+                        <TextInput labelText={'Importe del gasto ' + expense.expense_key + ' en ' + currencyCode(input.expenses[index].id_currency)}
+                            value={displayMoney(expense.source_amount, expense.source_code)} disabled />
+                    {:else}
+                        <TextInput type="number" labelText={'Importe del gasto ' + expense.expense_key + ' en ' + currencyCode(input.expenses[index].id_currency)}
+                            bind:value={input.expenses[index].amount} min="0" step="any" disabled={saving} />
+                    {/if}
                     {#if expense.source_currency!==Number(input.expenses[index].id_currency)}<p>Escribe el importe exacto en la moneda destino. No se aplicará una tasa automáticamente.</p>{/if}
                 </article>
             {/each}
@@ -137,12 +141,12 @@
                 {#if incompleteCosts}<p class="valuation-pending" role="status">Total incompleto: gastos pendientes de valoración.</p>{:else}
                 {#each preview.parts.filter(p=>p.id_currency===settings.id_currency) as part}
                     <div data-testid={'part-summary-'+part.id_currency}>
-                        <p>Ingresos: <strong>{displayMoney(part.amount)} {part.code}</strong></p>
-                        <p>Gastos generales: {displayMoney(part.general_expense)} {part.code} · Inventario: {displayMoney(part.inv_expense)} {part.code}</p>
-                        <p>Administración: {displayMoney(part.admin_amount)} {part.code}</p>
-                        <p class:negative={part.gross_profit.startsWith('-')}>Utilidad para comisiones: <strong>{displayMoney(part.gross_profit)} {part.code}</strong></p>
-                        <p>Para Taionca, incluidos gastos recuperados: {displayMoney(part.taionca_profit)} {part.code}</p>
-                        <p>Administración y comisiones a repartir: {displayMoney(money(part.commissions.reduce((sum,c)=>sum+units(c.profit),units(part.admin_amount))))} {part.code}</p>
+                        <p>Ingresos: <strong>{displayMoney(part.amount, part.code)} {part.code}</strong></p>
+                        <p>Gastos generales: {displayMoney(part.general_expense, part.code)} {part.code} · Inventario: {displayMoney(part.inv_expense, part.code)} {part.code}</p>
+                        <p>Administración: {displayMoney(part.admin_amount, part.code)} {part.code}</p>
+                        <p class:negative={part.gross_profit.startsWith('-')}>Utilidad para comisiones: <strong>{displayMoney(part.gross_profit, part.code)} {part.code}</strong></p>
+                        <p>Para Taionca, incluidos gastos recuperados: {displayMoney(part.taionca_profit, part.code)} {part.code}</p>
+                        <p>Administración y comisiones a repartir: {displayMoney(money(part.commissions.reduce((sum,c)=>sum+units(c.profit),units(part.admin_amount))), part.code)} {part.code}</p>
                     </div>
                 {/each}
                 {/if}
@@ -180,7 +184,7 @@
             </details>
             {#if input.exchanges.length}
                 <div class="cash-confirmation">
-                    {#each preview.exchanges as exchange}<p>Se descontarán {displayMoney(exchange.amount_from)} de {source.accounts.find(a=>a.id_account===exchange.account_from).name} y se acreditarán {displayMoney(exchange.amount_to)} {currencyCode(input.id_currency)} en {targetAccount ? targetAccount.name : 'la cuenta de reparto'}.</p>{/each}
+                    {#each preview.exchanges as exchange}<p>Se descontarán {displayMoney(exchange.amount_from, source.accounts.find(a=>a.id_account===exchange.account_from).code)} de {source.accounts.find(a=>a.id_account===exchange.account_from).name} y se acreditarán {displayMoney(exchange.amount_to, currencyCode(input.id_currency))} {currencyCode(input.id_currency)} en {targetAccount ? targetAccount.name : 'la cuenta de reparto'}.</p>{/each}
                     <label><input type="checkbox" bind:checked={reviewedExchange} disabled={saving} /> Confirmo los cambios de moneda y sus movimientos de saldo al cerrar.</label>
                 </div>
             {/if}
@@ -192,14 +196,14 @@
 
 <style>
     .field { display: block; margin: 1rem 0; font-weight: 600; }
-    select { display: block; width: 100%; max-width: 100%; padding: .65rem; margin-top: .5rem; background: white; border: 1px solid #8d8d8d; }
+    select { display: block; width: 100%; max-width: 100%; padding: .65rem; margin-top: .5rem; color: inherit; background: var(--taionca-field, white); border: 1px solid var(--taionca-border, #8d8d8d); }
     p, h3 { margin: 1rem 0; }
-    .part, article, .cash-confirmation { border: 1px solid #c6c6c6; padding: 1rem; margin: 1rem 0; min-width: 0; overflow-wrap: anywhere; }
+    .part, article, .cash-confirmation { border: 1px solid var(--taionca-border, #c6c6c6); padding: 1rem; margin: 1rem 0; min-width: 0; overflow-wrap: anywhere; }
     details { margin: 1.5rem 0; }
     summary { cursor: pointer; font-weight: 600; }
-    .error, .negative { color: #a2191f; }
-    .valuation-pending { color: #8a3800; font-weight: 600; }
-    .cash-confirmation { background: #fff1e6; }
+    .error, .negative { color: var(--taionca-error, #a2191f); }
+    .valuation-pending { color: var(--taionca-warning, #8a3800); font-weight: 600; }
+    .cash-confirmation { background: var(--taionca-warning-layer, #fff1e6); border-left-color: var(--taionca-warning, #c6c6c6); }
     @media (max-width: 600px) {
         .part :global(.bx--text-input-wrapper--inline) { display: block; }
         .part :global(.bx--text-input__label-helper-wrapper),

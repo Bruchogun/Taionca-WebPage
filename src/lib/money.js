@@ -28,9 +28,41 @@ export function percentage(amount, value) {
     if (rate > BigInt(100000)) throw new Error('El porcentaje no puede superar 100%.');
     return roundedRatio(amount * rate, BigInt(100000));
 }
-export function displayMoney(value) {
+
+function signedUnits(value) {
+    const text = String(value).trim();
+    return text.startsWith('-') ? -units(text.slice(1)) : units(text);
+}
+
+export function compareMoney(left, right) {
+    try {
+        const difference = signedUnits(left) - signedUnits(right);
+        return difference < ZERO ? -1 : Number(difference > ZERO);
+    } catch {
+        return Number(left) - Number(right) || 0;
+    }
+}
+
+export function displayMoney(value, currency) {
     if (value === null || value === undefined) return 'Pendiente';
-    const [whole, fraction = ''] = String(value).split('.');
-    const decimals = fraction.replace(/0+$/, '');
-    return whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (decimals ? '.' + decimals : '');
+    const code = String(currency ?? '').trim().toUpperCase();
+    const digits = ['BTC', '₿', 'BITCOIN', 'BITCOINS'].includes(code) ? 5 : 2;
+    const text = String(value).trim();
+    const decimal = /^([+-]?)(\d+)(?:\.(\d*))?$/.exec(text);
+    if (!decimal) {
+        const approximate = Number(text);
+        if (!text || !Number.isFinite(approximate)) return 'Pendiente';
+        const formatted = new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: digits,
+            maximumFractionDigits: digits
+        }).format(approximate);
+        return formatted.replace(/^-0(?=\.0+$)/, '0');
+    }
+
+    const [, sign, whole, fraction = ''] = decimal;
+    const atScale = BigInt(whole + fraction.slice(0, digits).padEnd(digits, '0'));
+    const rounded = atScale + BigInt(fraction[digits] >= '5' ? 1 : 0);
+    const scaled = rounded.toString().padStart(digits + 1, '0');
+    const prefix = sign === '-' && rounded !== ZERO ? '-' : '';
+    return prefix + scaled.slice(0, -digits).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '.' + scaled.slice(-digits);
 }

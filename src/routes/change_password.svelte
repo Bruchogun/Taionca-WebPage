@@ -1,5 +1,4 @@
 <script>
-	import 'carbon-components-svelte/css/white.css';
 	import { FluidForm, Button, PasswordInput } from "carbon-components-svelte";
 	import { session } from '../stores';
 	import { apiFetch } from '../functions';

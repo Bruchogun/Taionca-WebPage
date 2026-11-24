@@ -1,5 +1,5 @@
 import { invalid } from './api-transaction';
-import { getRate } from '../functions';
+import { getRate } from './exchange-rate';
 import { units, money } from './money';
 export async function payrollRows(client,payrolls,lock=false) {
     if (!Array.isArray(payrolls) || !payrolls.length || payrolls.some(p=>!Number.isInteger(p.id_payroll_odt_hour)||!Number.isInteger(p.id_account))) invalid('Seleccione horas y cuentas válidas.');

@@ -16,6 +16,10 @@ Los importes usan `numeric(30,10)`. Los porcentajes admiten de 0 a 100% y tres d
 
 Los gastos generales ya representan el total pagado: no se vuelven a multiplicar por cantidad. El inventario usa el costo que quedó registrado en los movimientos; solo cuando no existe ese registro histórico se usa cantidad × precio × tasa. Así, una reposición que cambie el precio del inventario no modifica el costo original de una ODT.
 
+Cuando una ODT tiene un importe final documentado, ese importe se usa para cerrar y el contrato original queda en el historial. Si el importe acordado es cero, la ODT puede cerrarse sin cuenta ni movimientos cuando carece de abonos, gastos contabilizados y horas pendientes.
+
+Al registrar un gasto general, el saldo de Taionca debe cubrir el gasto en la cuenta elegida. Si existe un límite para esa cuenta y ODT, se descuenta el importe de ese límite. Una cuenta sin límite configurado puede usarse si dispone de saldo, también cuando está en otra moneda.
+
 Se rechazan listas incompletas, usuarios duplicados dentro de un mismo cargo, comisiones que excedan 100%, usuarios sin entidad contable, nómina pendiente y pagos que no cubran gastos más administración. Un usuario puede participar en cargos distintos; sus abonos se agrupan por entidad.
 
 ## Correcciones relacionadas
@@ -29,16 +33,16 @@ Se rechazan listas incompletas, usuarios duplicados dentro de un mismo cargo, co
 
 ## Pruebas reproducibles
 
-Desde `C:\Proyectos\taionca`:
+Desde la carpeta de beta:
 
 ```powershell
 npm test
 npm run test:all
 ```
 
-`npm test` crea una base temporal `taionca_test_odt_<timestamp>`, aplica las migraciones desde cero, verifica la reversión y reaplicación de la nueva migración, crea datos ficticios y ejecuta Playwright con un servidor propio en el puerto 3107. Al terminar elimina únicamente esa base temporal y restaura el archivo generado de permisos. La conexión configurada en `.env` se utiliza para crear la base, nunca para insertar los datos de prueba. Se requiere un usuario PostgreSQL con permiso `CREATEDB`; puede usarse `TEST_ADMIN_DATABASE_URL` para otra conexión de pruebas.
+`npm test` levanta un clúster local temporal, aplica las migraciones en una base nueva, carga datos ficticios y ejecuta Playwright contra un servidor en un puerto libre. Al terminar elimina la base y el clúster que creó. Puedes indicar un clúster de pruebas existente con `TEST_ADMIN_DATABASE_URL`. Consulta la [configuración de pruebas](../README.md#pruebas).
 
-`npm run test:all` también compila cliente, servidor y service worker. En Windows las pruebas usan Microsoft Edge; puede indicarse otro canal con `PLAYWRIGHT_CHANNEL`. `TEST_PORT` permite cambiar el puerto. Se bloquean los service workers dentro de las pruebas para que no intercepten las respuestas de red simuladas.
+`npm run test:all` también compila cliente, servidor y service worker y verifica que la actualización conserva cierres y movimientos históricos. En Windows las pruebas usan Microsoft Edge. Usa `PLAYWRIGHT_CHANNEL` para elegir otro canal y `TEST_PORT` para elegir un puerto específico. Las pruebas bloquean los service workers para que no intercepten las respuestas simuladas.
 
 Cobertura: cierre real desde la interfaz y por API; cuenta elegida e historial; comisiones; decimales y redondeos; porcentajes límite; errores y conservación de datos; concurrencia; reversión de transacciones; ingresos, inversiones, transferencias y cambios de moneda; préstamos; límites de recursos; nómina; compra y consumo de ambos tipos de inventario; cotizaciones; inicio de sesión; pantalla móvil; carga de todas las rutas principales.
 
